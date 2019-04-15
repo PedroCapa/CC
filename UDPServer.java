@@ -15,6 +15,7 @@ class UDPServer
                   String sentence = new String( receivePacket.getData());
                   System.out.println("Conexão aceite do pedido: " + sentence);
                   InetAddress IPAddress = receivePacket.getAddress();
+                  System.out.println(receivePacket.getAddress());
                   int port = receivePacket.getPort();
                   String capitalizedSentence = sentence.toUpperCase();
                   sendData = capitalizedSentence.getBytes();
