@@ -8,18 +8,19 @@ import java.net.*;
 */
 
 // Para ja isto pode ser usado para o cliente indicar que ficheiro quer receber e se a conexão foi aceite
-class AgenteUDPClient
-{
-   public static void main(String args[]) throws Exception
-   {
+class UDPClient{
+
+   public static void main(String args[]) throws Exception{
+
       BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
       DatagramSocket clientSocket = new DatagramSocket();
       InetAddress IPAddress = InetAddress.getByName("localhost");
+      String myIp = InetAddress.getLocalHost().getHostAddress();
 
       byte[] sendData = new byte[1024];
       byte[] receiveData = new byte[1024];
       //Incio da conexão
-      Pacote inicio = new Pacote(false, true, false, false, new byte[1], -1, getLocalAdrees(), IPAddress);
+      Pacote inicio = new Pacote(false, true, false, false, new byte[1], 200000000, myIp, IPAddress.getHostAddress());
 
       sendData = inicio.pacote2bytes();
       DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 9876);
@@ -35,6 +36,9 @@ class AgenteUDPClient
 
 
       // Fim da conexão
+
+      
+      
       clientSocket.close();
    }
 }

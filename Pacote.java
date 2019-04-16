@@ -44,7 +44,7 @@ class Pacote{
 	}
 
 	byte[] pacote2bytes(){
-		byte[] pac = new byte[dados.length + 8];
+		byte[] pac = new byte[dados.length + 16];
 
 		pac[0] = (byte)(this.ack?1:0);
 		pac[1] = (byte)(this.syn?1:0);
@@ -74,7 +74,7 @@ class Pacote{
 	}
 
 	void bytes2pacote(byte[] copia){
-		dados = new byte[copia.length - 8];
+		dados = new byte[copia.length - 16];
 
 		ack = copia[0] != 0;
 		syn = copia[1] != 0;
