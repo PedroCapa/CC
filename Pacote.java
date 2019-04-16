@@ -9,10 +9,10 @@ class Pacote{
 	boolean psh;
 	byte[] dados;
 	Integer offset;
-	InetAddress origem;
-	InetAddress destino;
+	String origem;
+	String destino;
 
-	Pacote(boolean ack, boolean syn, boolean fin, boolean psh, byte[] dados, Integer offset, InetAddress origem , InetAddress destino){
+	Pacote(boolean ack, boolean syn, boolean fin, boolean psh, byte[] dados, Integer offset, String origem , String destino){
 		this.ack = ack;
 		this.syn = syn;
 		this.fin = fin;
@@ -21,6 +21,26 @@ class Pacote{
 		this.offset = offset;
 		this.origem = origem;
 		this.destino = destino;
+	}
+
+	Pacote(){
+		this.ack = false;
+		this.syn = false;
+		this.fin = false;
+		this.psh = false;
+		this.dados = new byte[1];
+		this.offset = 0;
+		this.origem = null;
+		this.destino = null;
+	}
+
+	public String getOrigem(){
+		return this.origem;
+	}
+
+
+	public String toString(){
+		return this.ack + " " + this.syn + " " + this.fin + " " + this.psh + " " + this.dados + " " + this.offset + " " + this.origem + " " + this.destino;
 	}
 
 	byte[] pacote2bytes(){
@@ -36,7 +56,7 @@ class Pacote{
 		System.arraycopy(off, 0, pac, 4, 4);
 
 		String [] ip = new String[4];
-		ip = origem.toString().split("\\.");
+		ip = origem.split("\\.");
 		for(int i = 0; i < 4; i++){
 			off[i] = Integer.valueOf(ip[i]).byteValue();
 		}
