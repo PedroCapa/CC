@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.*;
 import java.nio.ByteBuffer;
+import java.util.Comparator;
 
 class Pacote{
 	boolean ack;
@@ -34,13 +35,43 @@ class Pacote{
 		this.destino = null;
 	}
 
+	public boolean getAck(){
+		return this.ack;
+	}
+
+	public boolean getSyn(){
+		return this.syn;
+	}
+
+	public boolean getFin(){
+		return this.fin;
+	}
+
+	public boolean getPsh(){
+		return this.psh;
+	}
+
+	public byte[] getDados(){
+		return this.dados;
+	}
+
+	public Integer getOffset(){
+		return this.offset;
+	}
+
 	public String getOrigem(){
 		return this.origem;
 	}
 
+	public String getDestino(){
+		return this.destino;
+	}	
 
-	public String toString(){
-		return this.ack + " " + this.syn + " " + this.fin + " " + this.psh + " " + this.dados + " " + this.offset + " " + this.origem + " " + this.destino;
+	public String toString() {
+		String str = this.ack + " " + this.syn + " " + this.fin + " " + this.psh + " " + this.offset + " " + this.origem + " " + this.destino + " ";
+		String data = new String(dados);
+		str += data;
+		return str;
 	}
 
 	byte[] pacote2bytes(){
@@ -93,5 +124,12 @@ class Pacote{
 		destino = off[0] + "." + off[1] + "." + off[2] + "." + off[3];
 
 		System.arraycopy(copia, 16, dados, 0, dados.length);
+	}
+}
+
+class CompareOffsetPacote implements Comparator<Pacote>{
+
+	public int compare(Pacote p1, Pacote p2){
+		return Integer.valueOf(p1.getOffset()).compareTo(Integer.valueOf(p2.getOffset()));
 	}
 }
