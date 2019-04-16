@@ -85,16 +85,12 @@ class Pacote{
 
 		System.arraycopy(copia, 4, off, 0, 4);
 		offset = ByteBuffer.wrap(off).getInt();
-		try{
-			System.arraycopy(copia, 8, off, 0, 4);
-			origem = InetAddress.getByAddress(off);		
 
-			System.arraycopy(copia, 12, off, 0, 4);
-			destino = InetAddress.getByAddress(off);
-		}
-		catch(UnknownHostException e){
-			System.out.println(e);
-		}
+		System.arraycopy(copia, 8, off, 0, 4);
+		origem = off[0] + "." + off[1] + "." + off[2] + "." + off[3];
+
+		System.arraycopy(copia, 12, off, 0, 4);
+		destino = off[0] + "." + off[1] + "." + off[2] + "." + off[3];
 
 		System.arraycopy(copia, 16, dados, 0, dados.length);
 	}
