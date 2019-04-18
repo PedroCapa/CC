@@ -11,7 +11,7 @@ class ComandeLineTransfereCCApp{
 			tcc.upload(args[1]);
 		}
 
-		if(args[0].equals("get")){
+		else if(args[0].equals("get")){
 			tcc.download(args[1]);
 		}
 		else{

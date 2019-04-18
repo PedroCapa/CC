@@ -8,7 +8,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 class RecebeACK extends Thread{
 	Estado estado;
-	Condition espera;
 	DatagramSocket clientSocket;
 
 	public void run(){
@@ -20,14 +19,14 @@ class RecebeACK extends Thread{
     		this.clientSocket.receive(receivePacket);
       		Pacote incio = new Pacote();
       		incio.bytes2pacote(receivePacket.getData());
-      		System.out.println("FROM SERVER:" + incio);
+      		System.out.println("FROM RecebeACK: Recebi Syn ACK" + incio);
 			//Caso se tenha recebido acordar o UDPClient
-			this.espera.signalAll();
+			this.estado.setFase(1);
+			this.estado.acorda();
 	    }
 	    catch(IOException e){
 
 	    }
-
 		while(this.estado.getACK().size() < this.estado.getNumero()){// Nao recebeu todos os ACK dos ficheiros vai continuar no ciclo
       		try{
 				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
@@ -43,13 +42,15 @@ class RecebeACK extends Thread{
       		}
       		catch(IOException e){}
 		}
+        this.estado.setFase(2);
 		try{
 			DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
         	this.clientSocket.receive(receivePacket);
         	Pacote fim = new Pacote();
         	fim.bytes2pacote(receivePacket.getData());
-        	System.out.println(fim);
-			this.espera.signalAll();
+        	System.out.println("FROM RecebeACK: Recebi Fin ACK" + fim.toString());
+            this.estado.setFase(3);
+			this.estado.acorda();
 		}
 		catch(IOException e){}
 	}
@@ -58,9 +59,8 @@ class RecebeACK extends Thread{
 		this.estado = new Estado(); 
 	}
 
-	RecebeACK(Estado e, Condition c, DatagramSocket dp){
+	RecebeACK(Estado e, DatagramSocket dp){
 		this.estado = e;
-		this.espera = c;
 		this.clientSocket = dp;
 	}
 

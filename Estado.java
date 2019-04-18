@@ -2,7 +2,9 @@ import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 /*O agenteUDP so envia e recebe pacotes, o transporteUDP faz o resto
    TRansfereCC processa o pedido de conexao
    Enviar e receber datagramas e o agenteUDP
@@ -10,14 +12,16 @@ import java.util.List;
 
 // Para ja isto pode ser usado para o cliente indicar que ficheiro quer receber e se a conexão foi aceite
 class Estado{
-   List<Pacote> pacotes;
-   String origem;
-   String destino;
+   private List<Pacote> pacotes;
+   private String origem;
+   private String destino;
    //int portaDest;
    //int portaOrigem;
-   List<Integer> ACK;
-   int fase;
-   int numero; //numero de pacotes de dados que serao enviados
+   private List<Integer> ACK;
+   private int fase;
+   private int numero; //numero de pacotes de dados que serao enviados
+   private Lock lock;
+   private Condition espera;
 
    public Estado(){
       this.pacotes = new ArrayList<>();
@@ -28,9 +32,11 @@ class Estado{
       this.ACK = new ArrayList<>();
       this.fase = 0;
       this.numero = 0;
+      this.lock = new ReentrantLock();
+      this.espera = lock.newCondition();
    }
 
-   public Estado(List<Pacote> pacotes, String origem, String destino, /*int portaDest, int portaOrigem,*/ List<Integer> ACK, int fase, int numero){
+   public Estado(List<Pacote> pacotes, String origem, String destino, /*int portaDest, int portaOrigem,*/ List<Integer> ACK, int fase, int numero, Lock lock, Condition espera){
       this.pacotes = new ArrayList<>(pacotes);
       this.origem = origem;
       this.destino = destino;
@@ -39,18 +45,38 @@ class Estado{
       this.ACK = new ArrayList<>(ACK);
       this.fase = fase;
       this.numero = numero;
+      this.lock = lock;
+      this.espera = espera;
    }
 
    public List<Pacote> getPacotes(){
-      return this.pacotes;
+      lock.lock();
+      try{
+         return this.pacotes;
+      }
+      finally{
+         lock.unlock();
+      }
    }
 
    public String getDestino(){
-      return this.destino;
+      lock.lock();
+      try{
+         return this.destino;
+      }
+      finally{
+         lock.unlock();
+      }
    }
 
    public String getOrigem(){
-      return this.origem;
+      lock.lock();
+      try{
+         return this.origem;
+      }
+      finally{
+         lock.unlock();
+      }
    }
 /*
    public int getPortaOrigem(){
@@ -62,33 +88,98 @@ class Estado{
    }
 */
    public int getFase(){
-      return this.fase;
+      lock.lock();
+      try{
+         return this.fase;
+      }
+      finally{
+         lock.unlock();
+      }
    }
 
    public int getNumero(){
-      return this.numero;
+      lock.lock();
+      try{
+         return this.numero;
+      }
+      finally{
+         lock.unlock();
+      }
    }
 
    public List<Integer> getACK(){
-      return this.ACK;
+      lock.lock();
+      try{
+         return this.ACK;
+      }
+      finally{
+         lock.unlock();
+      }
    }
 
-   public void setFase(int fase){
-      this.fase = fase;
+    public void setFase(int fase){
+        lock.lock();
+        try{
+            this.fase = fase;
+        }
+        finally{
+            lock.unlock();
+        }
    }
 
    //verifica se e necessario reenviar algum pacote
    public boolean verificaEnvio(){
-      if(this.fase == 4)
-         return true;
-      else return false;
+      lock.lock();
+      try{
+         if(this.fase == 4)
+            return true;
+         else return false;
+      }
+      finally{
+         lock.unlock();
+      }
    }
 
    public void addACK(Integer ack){
-      this.ACK.add(ack);
+      lock.lock();
+      try{
+         this.ACK.add(ack);
+      }
+      finally{
+         lock.unlock();
+      }
    }
 
    public Integer getLastACK(){
-      return this.ACK.get(this.ACK.size() - 1);
+        lock.lock();
+        try{
+            return this.ACK.get(this.ACK.size() - 1);
+        }
+        finally{
+            lock.unlock();
+        }
+   }
+
+   public void espera(){
+      lock.lock();
+      try{
+         espera.await();
+      }
+      catch(InterruptedException e){
+
+      }
+      finally{
+         lock.unlock();
+      }
+   }
+
+   public void acorda(){
+      lock.lock();
+      try{
+         espera.signalAll();
+      }
+      finally{
+         lock.unlock();
+      }
    }
 }

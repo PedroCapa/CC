@@ -14,31 +14,22 @@ import java.util.concurrent.locks.ReentrantLock;
 // Para ja isto pode ser usado para o cliente indicar que ficheiro quer receber e se a conexão foi aceite
 class UDPClient{
 
-    Lock lock;
-    Condition espera;
-
-    public UDPClient(){
-        this.lock = new ReentrantLock();
-        this.espera = lock.newCondition();
-    }
-
-
     public void upload(byte[] bin_file) throws Exception{
         Estado estado = new Estado();
+        Lock lock = new ReentrantLock();
+        Condition espera = lock.newCondition();
         BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
         DatagramSocket clientSocket = new DatagramSocket();
         InetAddress IPAddress = InetAddress.getByName("localhost");
         String myIp = InetAddress.getLocalHost().getHostAddress();
 
-        byte [] data = new byte[] {70, 67, 80, 32, 118, 97, 105, 32, 103, 97, 110, 104, 97, 114, 32, 97, 32, 67, 104, 97, 109, 112, 105, 111, 110, 115};
-
         byte[] sendData = new byte[1024];
         byte[] receiveData = new byte[1024];
 
 
-        estado = new Estado(new ArrayList<>(), myIp, IPAddress.getHostAddress(), new ArrayList<>(), 0, (int) (bin_file.length / 1000));
+        estado = new Estado(new ArrayList<>(), myIp, IPAddress.getHostAddress(), new ArrayList<>(), 0, (int) (bin_file.length / 1000), lock, espera);
         //Começar a thread receberACK
-        RecebeACK R = new RecebeACK(estado, this.espera, clientSocket);
+        RecebeACK R = new RecebeACK(estado, clientSocket);
         R.start();
      
         //Incio da conexão
@@ -46,7 +37,7 @@ class UDPClient{
         int tentativas = 0;
         while(estado.getFase() == 0 && tentativas < 10){
             Pacote inicio = new Pacote(false, true, false, false, new byte[0], -1, myIp, IPAddress.getHostAddress());
-            System.out.println(inicio.toString());
+            System.out.println("FROM: UDPClient: Enviei SYN " + inicio.toString());
             sendData = inicio.pacote2bytes();
             DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 9876);
             clientSocket.send(sendPacket);
@@ -65,12 +56,6 @@ class UDPClient{
         //Passar esta parte para o RecebeACK e substituir por um await para esperar pela resposta
 
         //Envia ACK a dizer que vai começar a transmitir os dados
-        Pacote inicio = new Pacote(true, true, false, false, data, -1, myIp, IPAddress.getHostAddress());
-        System.out.println(inicio.toString());
-        sendData = inicio.pacote2bytes();
-        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 9876);
-        clientSocket.send(sendPacket);
-
         // Envio de dados Nesta parte e para criar pacotes de acordo com a lista de bytes e enviar para o Servidor
 
         for(int i = 0; i < bin_file.length; i = i + 1000){
@@ -85,7 +70,7 @@ class UDPClient{
             }
             Pacote enviar = new Pacote(false, false, false, true, dados, (Integer)(i / 1000), myIp, IPAddress.getHostAddress());
             sendData = enviar.pacote2bytes();
-            sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 9876);
+            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 9876);
             clientSocket.send(sendPacket);
             // Verificar se o ACK que recebeu está correto e em caso afirmativo envia o ultimo ACK que tiver
             if(!estado.verificaEnvio()){
@@ -104,10 +89,10 @@ class UDPClient{
         //Vai adormecer até receber o ultimo ACK em que vai ser um ciclo pq pode ter de reenviar pacotes
         // Fim da conexão
         while(estado.getFase() != 3){
-            Pacote fim = new Pacote(false, false, true, false, data, -1, myIp, IPAddress.getHostAddress());
-            System.out.println(fim.toString());
+            Pacote fim = new Pacote(false, false, true, false, new byte[0], -1, myIp, IPAddress.getHostAddress());
+            System.out.println("FROM UDPClient: Enviei FIN" + fim.toString());
             sendData = fim.pacote2bytes();
-            sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 9876);
+            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 9876);
             clientSocket.send(sendPacket);
             Thread.sleep(100);
         }
