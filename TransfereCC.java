@@ -22,7 +22,11 @@ class TransfereCC{
   		catch(IOException e){}
 		
   		UDPClient client = new UDPClient();
-		//client.upload(bin_file);
+		try{
+			byte[] nada = new byte[0];
+			client.upload(nada);
+		}
+		catch(Exception e){}
 	}
 
 	void download(String filename){

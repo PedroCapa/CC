@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 
 class UDPServer
 {
@@ -16,11 +17,12 @@ class UDPServer
 
         System.out.println(syn.toString());
         
-        //verificar o pacote syn esta correto -> fazer mais tarde
 
         InetAddress IPAddress = receivePacket.getAddress();// substituir por syn.getOrigem ???
                   
         int port = receivePacket.getPort();                 // Ver o q faz
+
+        Estado estado = new Estado(new ArrayList<>(), syn.getDestino(), syn.getOrigem(), new ArrayList<>(), 1, 0);
         
         Pacote synAck = new Pacote(true, true, false, false, new byte[0], -1, syn.getDestino(), syn.getOrigem());
         sendData = synAck.pacote2bytes();
