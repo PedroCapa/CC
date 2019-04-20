@@ -29,35 +29,37 @@ class RecebePacotes extends Thread{
         	this.serverSocket.receive(receivePacket);
         	syn.bytes2pacote(receivePacket.getData()); // Verificar se a conexão foi estabelecida
 
-        	System.out.println("FROM: RecebePacotes: Recebi Syn ACK ACK" + syn.toString() + 2);
+        	System.out.println("FROM: RecebePacotes: Recebi Syn ACK ACK " + syn.toString());
         	this.estado.setFase(2);
-        	this.estado.acorda();
+            this.estado.acorda();
 		}
 		catch(IOException e){}
 		//verificar o pacote ACk esta correto
-
-        //Após a conexão
-/*
-        Pacote psh = new Pacote();
-        do{
-            receivePacket = new DatagramPacket(receiveData, receiveData.length);
-            serverSocket.receive(receivePacket);
-            psh.bytes2pacote(receivePacket.getData());
-            serverSocket.send(sendPacket);
-            //Adicionar ao estado dos pacotes recebidos e mandar ACK no caso de ser psh
-
-            System.out.println(psh.toString());
+        try{
+            do{
+                Pacote psh = new Pacote();
+                receivePacket = new DatagramPacket(receiveData, receiveData.length);
+                serverSocket.receive(receivePacket);
+                psh.bytes2pacote(receivePacket.getData());
+                this.estado.addPacote(psh);
+                System.out.println("FROM: RecebePacotes: Recebi PSH " + psh.toString());
+                // Caso seja o ultimo if(){ 
+                    this.estado.setFase(3);
+                    this.estado.acorda();
+                // Caso seja o ultimo}
+            }
+            while(this.estado.getFase() == 2);
         }
-        while(psh.getPsh() == true);
-*/		
-        this.estado.setFase(3);
+        catch(Exception e){
+        }
+		
         this.estado.acorda();
         try{
         	receivePacket = new DatagramPacket(receiveData, receiveData.length);
         	serverSocket.receive(receivePacket);
         	Pacote fin = new Pacote();
         	fin.bytes2pacote(receivePacket.getData());
-        	System.out.println("FROM RecebePacotes: Recebi Fin" + fin.toString() + 3);
+        	System.out.println("FROM RecebePacotes: Recebi Fin " + fin.toString());
         	this.estado.setFase(4);
             this.estado.acorda();
         }

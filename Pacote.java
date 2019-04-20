@@ -2,6 +2,8 @@ import java.io.*;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.util.Comparator;
+import java.util.ArrayList;
+import java.util.List;
 
 class Pacote{
 	boolean ack;

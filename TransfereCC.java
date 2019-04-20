@@ -2,6 +2,7 @@ import java.io.FileOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.File;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.io.FileNotFoundException;
@@ -13,20 +14,38 @@ class TransfereCC{
 	void upload(String filename) {
 		
 		File file = new File(filename);
-  		byte[] bin_file = new byte[(int) file.length()];
+  		byte[] fileContent = new byte[(int) file.length()];
   		try{
 			FileInputStream fis = new FileInputStream(file);
-  			fis.read(bin_file);
+  			fis.read(fileContent);
   			fis.close();
   		}
-  		catch(IOException e){}
+  		catch(IOException e){
+            System.out.println("IOException");
+        }
 		
   		UDPClient client = new UDPClient();
 		try{
-			byte[] nada = new byte[0];
-			client.upload(nada);
+            List<Dados> dados = new ArrayList<>();
+            for(int i = 0; i < fileContent.length; i = i + 1000){
+                byte [] copia;
+                if(fileContent.length - i > 1000){
+                    copia = new byte[1000];
+                    System.arraycopy(fileContent, i, copia, 0, 1000);
+                }
+                else{
+                    copia = new byte[(fileContent.length - i)];
+                    System.arraycopy(fileContent, i, copia, 0, fileContent.length - i);
+                }
+                Dados d = new Dados(copia, i);
+                System.out.println(d);
+                dados.add(d);
+            }
+			client.upload(dados);
 		}
-		catch(Exception e){}
+		catch(Exception e){
+            System.out.println(e);
+        }
 	}
 
 	void download(String filename){

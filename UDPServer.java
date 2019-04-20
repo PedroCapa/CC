@@ -19,7 +19,7 @@ class UDPServer{
         serverSocket.receive(receivePacket);
         Pacote syn = new Pacote();
         syn.bytes2pacote(receivePacket.getData());
-        System.out.println("FROM: UDPServer: Recebi Syn" + syn.toString() + 1);
+        System.out.println("FROM: UDPServer: Recebi Syn " + syn.toString());
         //
 
         InetAddress IPAddress = receivePacket.getAddress();// substituir por syn.getOrigem ???
@@ -30,20 +30,26 @@ class UDPServer{
         RecebePacotes rp = new RecebePacotes(estado, receivePacket, serverSocket);
         rp.start();
 
-
         Pacote synAck = new Pacote(true, true, false, false, new byte[0], -1, syn.getDestino(), syn.getOrigem());
         sendData = synAck.pacote2bytes();
         DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port); // Ver o IPAddress e a port
         serverSocket.send(sendPacket);
-        System.out.println("FROM: UDPServer: Enviei Syn ACK" + synAck.toString());
+        System.out.println("FROM: UDPServer: Enviei Syn ACK " + synAck.toString());
 
         //Enviar ACK
-        /*
-        while(estado.getFase() == 2){
-
+        while(estado.getFase() != 2){
+            estado.espera();
         }
-        //
-        */
+
+        while(estado.getFase() == 2){
+            estado.espera();
+            Pacote pshAck = new Pacote(true, false, false, true, new byte[0], -1, syn.getDestino(), syn.getOrigem());
+            sendData = pshAck.pacote2bytes();
+            sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port); // Ver o IPAddress e a port
+            serverSocket.send(sendPacket);
+            System.out.println("FROM: UDPServer: Enviei PSH ACK " + synAck.toString());
+        }
+
         while (estado.getFase() != 4) {
             estado.espera();
         }
@@ -53,6 +59,7 @@ class UDPServer{
         sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port); // Ver o IPAddress e a port
         serverSocket.send(sendPacket);
 
-        System.out.println("FROM UDPServer: Enviei Fin ACK" + finAck.toString() + 4);
+        rp.join();
+        serverSocket.close();
       }
 }

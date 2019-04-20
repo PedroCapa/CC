@@ -128,7 +128,7 @@ class Estado{
    }
 
    //verifica se e necessario reenviar algum pacote
-   public boolean verificaEnvio(){
+   public boolean reenvia(){
       lock.lock();
       try{
          if(this.fase == 4)
@@ -182,4 +182,8 @@ class Estado{
          lock.unlock();
       }
    }
+
+    public void addPacote(Pacote p){
+        this.pacotes.add(p);
+    }
 }
