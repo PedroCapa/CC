@@ -70,7 +70,11 @@ class Pacote{
 	}	
 
 	public String toString() {
-		String str = this.ack + " " + this.syn + " " + this.fin + " " + this.psh + " " + this.offset + " " + this.origem + " " + this.destino + " ";
+		String str = "";
+		str += (this.ack) ? "ACK ": "";
+		str += (this.syn) ? "SYN ": "";
+		str += (this.psh) ? "PSH ": "";
+		str += (this.fin) ? "FIN ": "";
 		String data = new String(dados);
 		str += data;
 		return str;
@@ -133,9 +137,17 @@ class Pacote{
 		return (this.ack && this.syn);
 	}
 
+	public boolean pshAck(){
+		return (this.ack && this.psh);
+	}
+
 	public boolean acabou(){
 		return (this.fin && !this.ack && !this.psh && !this.syn);
 	}
+
+	public boolean pshFin(){
+		return (this.fin && this.psh);
+	}	
 }
 
 class CompareOffsetPacote implements Comparator<Pacote>{

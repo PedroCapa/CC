@@ -21,7 +21,8 @@ class Estado{
    private int fase;
    private int numero; //numero de pacotes de dados que serao enviados
    private Lock lock;
-   private Condition espera;
+   private Condition recebe;
+   private Condition controlo;
 
    public Estado(){
       this.pacotes = new ArrayList<>();
@@ -33,20 +34,20 @@ class Estado{
       this.fase = 0;
       this.numero = 0;
       this.lock = new ReentrantLock();
-      this.espera = lock.newCondition();
+      this.recebe = lock.newCondition();
+      this.controlo = lock.newCondition();
    }
 
-   public Estado(List<Pacote> pacotes, String origem, String destino, /*int portaDest, int portaOrigem,*/ List<Integer> ACK, int fase, int numero, Lock lock, Condition espera){
+   public Estado(List<Pacote> pacotes, String origem, String destino, List<Integer> ACK, int fase, int numero, Lock lock, Condition recebe, Condition controlo){
       this.pacotes = new ArrayList<>(pacotes);
       this.origem = origem;
       this.destino = destino;
-      //this.portaDest = portaDest;
-      //this.portaOrigem = portaOrigem;
       this.ACK = new ArrayList<>(ACK);
       this.fase = fase;
       this.numero = numero;
       this.lock = lock;
-      this.espera = espera;
+      this.recebe = recebe;
+      this.controlo = controlo;
    }
 
    public List<Pacote> getPacotes(){
@@ -160,23 +161,42 @@ class Estado{
         }
    }
 
-   public void espera(){
+   public void esperaRecebe(){
       lock.lock();
       try{
-         espera.await();
+         recebe.await();
       }
-      catch(InterruptedException e){
+      catch(InterruptedException e){}
+      finally{
+         lock.unlock();
+      }
+   }
 
+   public void acordaRecebe(){
+      lock.lock();
+      try{
+         recebe.signalAll();
       }
       finally{
          lock.unlock();
       }
    }
 
-   public void acorda(){
+   public void esperaControlo(){
       lock.lock();
       try{
-         espera.signalAll();
+         controlo.await();
+      }
+      catch(InterruptedException e){}
+      finally{
+         lock.unlock();
+      }
+   }
+
+   public void acordaControlo(){
+      lock.lock();
+      try{
+         controlo.signalAll();
       }
       finally{
          lock.unlock();
