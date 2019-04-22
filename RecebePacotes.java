@@ -33,6 +33,7 @@ class RecebePacotes extends Thread{
                 psh.bytes2pacote(receivePacket.getData());
                 if(psh.getPsh()){
                     this.estado.addPacote(psh);
+                    this.estado.addACK(psh.getOffset());
                     System.out.println("FROM: RecebePacotes: Recebi " + psh.toString());
                 }
                 if(psh.pshFin()){ 
