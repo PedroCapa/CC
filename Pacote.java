@@ -127,6 +127,15 @@ class Pacote{
 
 		System.arraycopy(copia, 16, dados, 0, dados.length);
 	}
+
+
+	public boolean synAck(){
+		return (this.ack && this.syn);
+	}
+
+	public boolean acabou(){
+		return (this.fin && !this.ack && !this.psh && !this.syn);
+	}
 }
 
 class CompareOffsetPacote implements Comparator<Pacote>{

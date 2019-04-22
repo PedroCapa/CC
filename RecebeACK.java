@@ -20,8 +20,9 @@ class RecebeACK extends Thread{
       		Pacote incio = new Pacote();
       		incio.bytes2pacote(receivePacket.getData());
       		System.out.println("FROM RecebeACK: Recebi Syn ACK " + incio);
-			//Caso se tenha recebido acordar o UDPClient
-			this.estado.setFase(1);
+      		if(incio.synAck()){
+				this.estado.setFase(1);
+      		}
 	    }
 	    catch(IOException e){
 
