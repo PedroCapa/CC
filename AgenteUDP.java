@@ -19,13 +19,29 @@ class AgenteUDP{
     private DatagramPacket udpPacket;
     private InetAddress IPAddress;
 
+    public List<Dados> getFile(byte [] tipo_conexao) throws IOException{
+        try{
+            TransfereCC tcc = new TransfereCC();
+            String str = new String(tipo_conexao);
+            String [] filename = str.split(" ");
+            //Testar se o filename tem tamanha correto e se ficheiro existe
+            if(filename.length > 0){
+                String name = filename[1];
+                List<Dados> dados = tcc.file2Dados(filename[1]);
+                return dados;
+            }
+            else{
+                //Trocar IOException por uma Excecao criada
+                throw new IOException("Qual o nome do ficheiro\n");
+            }
+        }
+        catch(IOException e){
+            throw new IOException(e);
+        }
+    }
 
-    public void downloadServer(Estado estado, byte [] tipo_conexao){
-        TransfereCC tcc = new TransfereCC();
-        String str = new String(tipo_conexao);
-        String [] filename = str.split(" ");
-        //Testar se o filename tem tamanha correto e se ficheiro existe
-        List<Dados> dados = tcc.file2Dados(filename[1]);
+    public void downloadServer(Estado estado, List<Dados> dados){
+        
         int tamanho = dados.size();
         for(int i = 0; i < tamanho; i++){
             Dados d = dados.get(i);
@@ -36,7 +52,6 @@ class AgenteUDP{
                 }
                 catch(UnknownHostException e){
                     System.out.println(e);
-
                 }
             }
             else{
@@ -93,7 +108,7 @@ class AgenteUDP{
         }
     }
 
-    public List<Pacote> servidor() throws Exception{
+    public List<Pacote> servidor() throws Exception, IOException{
         this.udpSocket = new DatagramSocket(9876);
         Lock lock = new ReentrantLock();
         Condition espera = lock.newCondition();
@@ -110,6 +125,15 @@ class AgenteUDP{
         
         receiveData = syn.getDados();
         char tipo_conexao = (char)receiveData[0];
+
+        List<Dados> dados = new ArrayList<>();
+
+        try{
+            dados = getFile(receiveData);
+        }
+        catch(IOException e){
+            throw new IOException(e);
+        }
 
         this.IPAddress = udpPacket.getAddress();// substituir por syn.getOrigem ???
         int port = udpPacket.getPort();                 // Ver o q faz
@@ -135,7 +159,7 @@ class AgenteUDP{
             uploadServer(estado, port);
         }
         else if(tipo_conexao == 'd'){
-            downloadServer(estado, receiveData);
+            downloadServer(estado, dados);
         }
 
         rp.join();
@@ -168,8 +192,8 @@ class AgenteUDP{
             System.out.println(e);
         }
     }
-/*
-    public List<Pacote> download(String filename){
+
+    public List<Pacote> download(String filename) throws Exception{
         Estado estado = new Estado();
         Lock lock = new ReentrantLock();
         Condition espera = lock.newCondition();
@@ -177,6 +201,7 @@ class AgenteUDP{
         String myIp = InetAddress.getLocalHost().getHostAddress();
         this.udpSocket = new DatagramSocket();
         this.IPAddress = InetAddress.getByName("localhost");
+        List<Pacote> dados = new ArrayList<>();
 
         estado = new Estado(new ArrayList<>(), myIp, IPAddress.getHostAddress(), new ArrayList<>(), 0, dados.size(), lock, espera, controlo);
         //Começar a thread receberACK
@@ -186,8 +211,10 @@ class AgenteUDP{
         //Incio da conexão
         //Um pacote SYN nao recebe dados
         int tentativas = 0;
+        String syn_data = "d " + filename;
+        System.out.println(syn_data);
         while(estado.getFase() == 0 && tentativas < 10){
-            Pacote inicio = new Pacote(false, true, false, false, "d" + filename, -1, myIp, IPAddress.getHostAddress());
+            Pacote inicio = new Pacote(false, true, false, false, syn_data.getBytes(), -1, myIp, IPAddress.getHostAddress());
             System.out.println("FROM: UDPClient: Enviei " + inicio.toString());
             enviaPacote(inicio);
             Thread.sleep(100);
@@ -198,7 +225,7 @@ class AgenteUDP{
             ccc.interrupt();
             System.out.println("Nao foi aceite o pedido");
             udpSocket.close();
-            return;
+            return (new ArrayList<Pacote>());
         }
 
         Pacote synAck = new Pacote(true, true, false, false, new byte[0], -1, myIp, IPAddress.getHostAddress());
@@ -206,15 +233,13 @@ class AgenteUDP{
         enviaPacote(synAck);
         Thread.sleep(300);
 
-        RecebePacotes R = new RecebePacotes(estado, udpSocket);
+        RecebePacotes R = new RecebePacotes(estado, udpPacket, udpSocket);
         R.start();
 
         while(estado.getFase() == 2){
             estado.esperaRecebe();
-            Pacote pshAck = new Pacote(true, false, false, true, new byte[0], estado.getLastACK(), syn.getDestino(), syn.getOrigem());
-            sendData = pshAck.pacote2bytes();
-            DatagramPacket udpPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port); // Ver o IPAddress e a port
-            udpSocket.send(udpPacket);
+            Pacote pshAck = new Pacote(true, false, false, true, new byte[0], estado.getLastACK(), estado.getDestino(), estado.getOrigem());
+            enviaPacote(pshAck);
             System.out.println("FROM: UDPClient: Enviei " + pshAck.toString());
         }
 
@@ -233,8 +258,9 @@ class AgenteUDP{
         ccc.join();
         udpSocket.close();
 
+        return estado.getPacotes();
     }
-*/
+
     public void upload(List<Dados> dados) throws Exception{
         Estado estado = new Estado();
         Lock lock = new ReentrantLock();

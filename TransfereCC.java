@@ -25,9 +25,14 @@ class TransfereCC{
 
 	void download(String filename){
 
-  		AgenteUDP client = new AgenteUDP();
-  		List<Pacote> pacotes = new ArrayList<>(); //client.download(filename);
-  		escreveFile(pacotes);
+        try{    
+  		    AgenteUDP client = new AgenteUDP();
+      		List<Pacote> pacotes = client.download(filename); //client.download(filename);
+            escreveFile(pacotes);
+        }
+        catch(Exception e){
+            System.out.println(e);
+        }
   		
 	}
 
@@ -38,12 +43,15 @@ class TransfereCC{
             pacotes = udp.servidor();
             escreveFile(pacotes);
         }
+        catch(IOException e){
+            System.out.println(e);
+        }
         catch(Exception e){
             System.out.println(e);
         }
     }
 
-    List<Dados> file2Dados(String filename){
+    List<Dados> file2Dados(String filename) throws IOException{
         
         File file = new File(filename);
         byte[] fileContent = new byte[(int) file.length()];
@@ -53,10 +61,9 @@ class TransfereCC{
             fis.close();
         }
         catch(IOException e){
-            System.out.println("IOException");
+            throw new IOException(e);
         }
         
-        AgenteUDP client = new AgenteUDP();
         try{
             List<Dados> dados = new ArrayList<>();
             for(int i = 0; i < fileContent.length; i = i + 1000){
