@@ -39,8 +39,11 @@ class ControloConexaoCliente extends Thread{
         	Pacote fim = new Pacote();
         	fim.bytes2pacote(receivePacket.getData());
         	System.out.println("FROM ControloConexaoCliente: Recebi " + fim.toString());
-            this.estado.setFase(3);
-			this.estado.acordaRecebe();
+        	if(fim.finAck()){
+            	this.estado.setFase(3);
+				this.estado.acordaRecebe();
+        	}
+        		
 		}
 		catch(IOException e){}
 	}

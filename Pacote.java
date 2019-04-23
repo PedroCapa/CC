@@ -147,7 +147,11 @@ class Pacote{
 
 	public boolean pshFin(){
 		return (this.fin && this.psh);
-	}	
+	}
+
+	public boolean finAck(){
+		return (this.fin && this.ack && !this.psh);
+	}
 }
 
 class CompareOffsetPacote implements Comparator<Pacote>{

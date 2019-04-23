@@ -69,7 +69,7 @@ class UDPServer{
         Lock lock = new ReentrantLock();
         Condition espera = lock.newCondition();
         Condition controlo = lock.newCondition();
-        byte[] receiveData = new byte[10024];
+        byte[] receiveData = new byte[1024];
         byte[] sendData = new byte[1024];
  
         //Inicio da conexão

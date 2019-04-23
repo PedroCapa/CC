@@ -8,16 +8,15 @@ import java.util.concurrent.locks.ReentrantLock;
 
 class RecebeACK extends Thread{
 	Estado estado;
-	DatagramSocket clientSocket;
+	DatagramSocket socket;
 
 	public void run(){
 		byte[] receiveData = new byte[1024];
-
 		while(this.estado.getACK().size() < this.estado.getNumero()){// Nao recebeu todos os ACK dos ficheiros vai continuar no ciclo
       		try{
-				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-      			this.clientSocket.receive(receivePacket);
       			Pacote p = new Pacote();
+				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+      			this.socket.receive(receivePacket);
       			p.bytes2pacote(receivePacket.getData());
 		      	if(p.pshAck()){
 			      	System.out.println("FROM RecebeACK: Receber " + p);
@@ -35,7 +34,6 @@ class RecebeACK extends Thread{
 
       		}
 		}
-
         this.estado.setFase(2);
         this.estado.acordaRecebe();
 	}
@@ -46,7 +44,7 @@ class RecebeACK extends Thread{
 
 	RecebeACK(Estado e, DatagramSocket dp){
 		this.estado = e;
-		this.clientSocket = dp;
+		this.socket = dp;
 	}
 
 }

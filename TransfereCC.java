@@ -66,11 +66,11 @@ class TransfereCC{
         
         try{
             List<Dados> dados = new ArrayList<>();
-            for(int i = 0; i < fileContent.length; i = i + 1000){
+            for(int i = 0; i < fileContent.length; i = i + 1024){
                 byte [] copia;
-                if(fileContent.length - i > 1000){
-                    copia = new byte[1000];
-                    System.arraycopy(fileContent, i, copia, 0, 1000);
+                if(fileContent.length - i > 1024){
+                    copia = new byte[1024];
+                    System.arraycopy(fileContent, i, copia, 0, 1024);
                 }
                 else{
                     copia = new byte[(fileContent.length - i)];

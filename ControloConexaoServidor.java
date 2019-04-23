@@ -41,7 +41,6 @@ class ControloConexaoServidor extends Thread{
 		
         //Adormecer Thread e esperar que seja acordada
         this.estado.esperaControlo();
-		
         this.estado.acordaRecebe();
         try{
             while(this.estado.getFase() != 4){

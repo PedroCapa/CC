@@ -9,7 +9,7 @@ import java.util.concurrent.locks.ReentrantLock;
 class RecebePacotes extends Thread{
 	Estado estado;
 	DatagramPacket receivePacket;
-	DatagramSocket serverSocket;
+	DatagramSocket socket;
 
 	RecebePacotes(){
 		this.estado = new Estado();
@@ -18,25 +18,25 @@ class RecebePacotes extends Thread{
 	RecebePacotes(Estado e, DatagramPacket dp, DatagramSocket ds){
 		this.estado = e;
 		this.receivePacket = dp;
-		this.serverSocket = ds;
+		this.socket = ds;
 	}
 
 	public void run(){
-		byte[] receiveData = new byte[10024];
+		byte[] receiveData = new byte[1024];
 		
 		//verificar o pacote ACk esta correto
         try{
             do{
                 Pacote psh = new Pacote();
                 receivePacket = new DatagramPacket(receiveData, receiveData.length);
-                serverSocket.receive(receivePacket);
+                socket.receive(receivePacket);
                 psh.bytes2pacote(receivePacket.getData());
                 if(psh.getPsh()){
                     this.estado.addPacote(psh);
                     this.estado.addACK(psh.getOffset());
                     System.out.println("FROM: RecebePacotes: Recebi " + psh.toString());
                 }
-                if(psh.pshFin()){ 
+                if(psh.pshFin()){
                     this.estado.setFase(3);
                     this.estado.acordaRecebe();
                 }
