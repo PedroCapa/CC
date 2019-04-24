@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 
 class TransfereCC{
 
@@ -66,18 +67,17 @@ class TransfereCC{
         
         try{
             List<Dados> dados = new ArrayList<>();
-            for(int i = 0; i < fileContent.length; i = i + 1024){
+            for(int i = 0; i < fileContent.length; i = i + 1008){
                 byte [] copia;
-                if(fileContent.length - i > 1024){
-                    copia = new byte[1024];
-                    System.arraycopy(fileContent, i, copia, 0, 1024);
+                if(fileContent.length - i > 1008){
+                    copia = new byte[1008];
+                    System.arraycopy(fileContent, i, copia, 0, 1008);
                 }
                 else{
                     copia = new byte[(fileContent.length - i)];
                     System.arraycopy(fileContent, i, copia, 0, fileContent.length - i);
                 }
                 Dados d = new Dados(copia, i);
-                System.out.println(d);
                 dados.add(d);
             }
             return dados;

@@ -22,23 +22,23 @@ class RecebePacotes extends Thread{
 	}
 
 	public void run(){
-		byte[] receiveData = new byte[1024];
-		
 		//verificar o pacote ACk esta correto
         try{
             do{
+        		byte[] receiveData = new byte[1024];
                 Pacote psh = new Pacote();
                 receivePacket = new DatagramPacket(receiveData, receiveData.length);
                 socket.receive(receivePacket);
                 psh.bytes2pacote(receivePacket.getData());
                 if(psh.getPsh()){
+                    System.out.println("FROM: RecebePacotes: Recebi " + psh.toString());
                     this.estado.addPacote(psh);
                     this.estado.addACK(psh.getOffset());
-                    System.out.println("FROM: RecebePacotes: Recebi " + psh.toString());
+                    this.estado.acordaRecebe();
                 }
                 if(psh.pshFin()){
+                    System.out.println("Recebi ultimo");
                     this.estado.setFase(3);
-                    this.estado.acordaRecebe();
                 }
             }
             while(this.estado.getFase() == 2);

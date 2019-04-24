@@ -75,8 +75,8 @@ class Pacote{
 		str += (this.syn) ? "SYN ": "";
 		str += (this.psh) ? "PSH ": "";
 		str += (this.fin) ? "FIN ": "";
-		String data = new String(dados);
-		str += data;
+		//String data = new String(dados);
+		//str += data;
 		return str;
 	}
 

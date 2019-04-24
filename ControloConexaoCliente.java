@@ -15,14 +15,14 @@ class ControloConexaoCliente extends Thread{
 
 		//Receber o ACK do incio de conexão
 	    try{
-	    	while(this.estado.getFase() != 1){
+	    	while(this.estado.getFase() != 2){
 				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
     			this.clientSocket.receive(receivePacket);
       			Pacote incio = new Pacote();
       			incio.bytes2pacote(receivePacket.getData());
       			System.out.println("FROM ControloConexaoCliente: Recebi " + incio);
       			if(incio.synAck()){
-					this.estado.setFase(1);
+					this.estado.setFase(2);
       			}
 	    	}
 	    }
@@ -31,16 +31,16 @@ class ControloConexaoCliente extends Thread{
 		//Colocar thread a dormir para recebePacotes o acordar
 		this.estado.esperaControlo();
 
-        this.estado.setFase(2);
+        this.estado.setFase(3);
         this.estado.acordaRecebe();
 		try{
 			DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
         	this.clientSocket.receive(receivePacket);
         	Pacote fim = new Pacote();
         	fim.bytes2pacote(receivePacket.getData());
-        	System.out.println("FROM ControloConexaoCliente: Recebi " + fim.toString());
         	if(fim.finAck()){
-            	this.estado.setFase(3);
+        		System.out.println("FROM ControloConexaoCliente: Recebi " + fim.toString());
+            	this.estado.setFase(4);
 				this.estado.acordaRecebe();
         	}
         		

@@ -204,6 +204,28 @@ class Estado{
    }
 
     public void addPacote(Pacote p){
-        this.pacotes.add(p);
+        lock.lock();
+        try{
+            this.pacotes.add(p);
+        }
+        finally{
+            lock.unlock();
+        }
+    }
+
+    public Integer enviaAck(){
+        lock.lock();
+        try{
+            if(this.ACK.size() == 0)
+                return -1;
+            else{
+                Integer i = this.ACK.get(0); 
+                this.ACK.remove(0);
+                return i;
+            }
+        }
+        finally{
+            lock.unlock();
+        }
     }
 }

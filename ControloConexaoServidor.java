@@ -33,7 +33,6 @@ class ControloConexaoServidor extends Thread{
                 if(syn.synAck()){
                     System.out.println("FROM: ControloConexaoServidor: Recebi " + syn.toString());
                     this.estado.setFase(2);
-                    this.estado.acordaRecebe();
                 }
             }
 		}

@@ -22,10 +22,10 @@ class AgenteUDP{
     public void enviaPacoteServidor(Pacote p, int port){
         try{
             byte[] sendData = new byte[1024];
+            System.out.println("FROM: UDPServer: Enviei " + p.toString());
             sendData = p.pacote2bytes();
             this.udpPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
             udpSocket.send(udpPacket);
-            System.out.println("FROM: UDPServer: Enviei " + p.toString());
         }
         catch(IOException e){
             System.out.println(e);
@@ -88,8 +88,8 @@ class AgenteUDP{
             }
         }
 
-        while(estado.getFase() == 4 || estado.getFase() == 1){
-            if(estado.getFase() == 4){
+        while(estado.getFase() == 5 || estado.getFase() == 2){
+            if(estado.getFase() == 5){
                 System.out.println("FROM: UDPClient: E necessario reenviar ");
                 Integer indice = estado.getLastACK();
                 Pacote reenvio = estado.getPacotes().get(indice);
@@ -98,29 +98,25 @@ class AgenteUDP{
             }
 
             if(estado.getACK().size() == dados.size())
-                estado.setFase(2);
+                estado.setFase(3);
         }
     }
 
     public void uploadServer(Estado estado, int port){
-        while(estado.getFase() == 2){
-            try{
-                byte [] sendData = new byte[1024];
+        while(estado.getFase() == 2 || estado.getACK().size() != 0){
+            if(estado.getFase() == 2 || estado.getACK().size() == 0)
                 estado.esperaRecebe();
-                Pacote pshAck = new Pacote(true, false, false, true, new byte[0], estado.getLastACK(), estado.getDestino(), estado.getOrigem());
-                sendData = pshAck.pacote2bytes();
-                this.udpPacket = new DatagramPacket(sendData, sendData.length, this.IPAddress, port);
-                this.udpSocket.send(udpPacket);
-                System.out.println("FROM: UDPServer: Enviei " + pshAck.toString());
-            }
-            catch(IOException e){
-                System.out.println(e);
+            byte [] sendData = new byte[1024];
+            Integer i = estado.enviaAck();
+            if(i != -1){
+                Pacote pshAck = new Pacote(true, false, false, true, new byte[0], i, estado.getDestino(), estado.getOrigem());
+                enviaPacoteServidor(pshAck, port);
             }
         }
     }
 
     public List<Pacote> servidor() throws Exception, IOException{
-        this.udpSocket = new DatagramSocket(9876);
+        this.udpSocket = new DatagramSocket(7777);
         Lock lock = new ReentrantLock();
         Condition espera = lock.newCondition();
         Condition controlo = lock.newCondition();
@@ -186,10 +182,7 @@ class AgenteUDP{
         }
 
         Pacote finAck = new Pacote(true, false, true, false, new byte[0], -1, syn.getDestino(), syn.getOrigem());
-        sendData = finAck.pacote2bytes();
-        DatagramPacket udpPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port); // Ver o IPAddress e a port
-        udpSocket.send(udpPacket);
-        System.out.println("FROM: UDPServer: Enviei " + finAck.toString());
+        enviaPacoteServidor(finAck, port);
 
         ccs.join();
         udpSocket.close();
@@ -199,9 +192,10 @@ class AgenteUDP{
 
     public void enviaPacote(Pacote p){
         try{
+            System.out.println("FROM: UDPClient: Enviei" + p);
             byte[] sendData = new byte[1024];
             sendData = p.pacote2bytes();
-            this.udpPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 9876);
+            this.udpPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 7777);
             this.udpSocket.send(this.udpPacket);
         }
         catch(IOException e){
@@ -230,7 +224,6 @@ class AgenteUDP{
         String syn_data = "d " + filename + " "; // O problema e que o filename tem 1006 de tamanhod
         while(estado.getFase() == 0 && tentativas < 10){
             Pacote inicio = new Pacote(false, true, false, false, syn_data.getBytes(), -1, myIp, IPAddress.getHostAddress());
-            System.out.println("FROM: UDPClient: Enviei " + inicio.toString());
             enviaPacote(inicio);
             Thread.sleep(100);
             tentativas++;
@@ -244,17 +237,20 @@ class AgenteUDP{
         }
 
         Pacote synAck = new Pacote(true, true, false, false, new byte[0], -1, myIp, IPAddress.getHostAddress());
-        System.out.println("FROM: UDPClient: Enviei " + synAck.toString());
         enviaPacote(synAck);
 
         RecebePacotes R = new RecebePacotes(estado, udpPacket, udpSocket);
         R.start();
 
-        while(estado.getFase() == 1){
-            estado.esperaRecebe();
-            Pacote pshAck = new Pacote(true, false, false, true, new byte[0], estado.getLastACK(), estado.getDestino(), estado.getOrigem());
-            enviaPacote(pshAck);
-            System.out.println("FROM: UDPClient: Enviei " + pshAck.toString());
+        while(estado.getFase() == 2 || estado.getACK().size() != 0){
+            if(estado.getFase() == 2 || estado.getACK().size() == 0)
+                estado.esperaRecebe();
+            byte [] sendData = new byte[1024];
+            Integer i = estado.enviaAck();
+            if(i != -1){
+                Pacote pshAck = new Pacote(true, false, false, true, new byte[0], i, estado.getDestino(), estado.getOrigem());
+                enviaPacote(pshAck);
+            }
         }
 
         R.join();
@@ -263,9 +259,8 @@ class AgenteUDP{
         //Vai adormecer até receber o ultimo ACK em que vai ser um ciclo pq pode ter de reenviar pacotes
         // Fim da conexão
         estado.esperaRecebe();
-        while(estado.getFase() == 2){
+        while(estado.getFase() == 3){
             Pacote fim = new Pacote(false, false, true, false, new byte[0], (dados.size() + 1) * 1024, myIp, IPAddress.getHostAddress());
-            System.out.println("FROM UDPClient: Enviei " + fim.toString());
             enviaPacote(fim);
             Thread.sleep(100);
         }
@@ -298,7 +293,6 @@ class AgenteUDP{
         int tentativas = 0;
         while(estado.getFase() == 0 && tentativas < 10){
             Pacote inicio = new Pacote(false, true, false, false, tipo_conexao, -1, myIp, IPAddress.getHostAddress());
-            System.out.println("FROM: UDPClient: Enviei " + inicio.toString());
             enviaPacote(inicio);
             Thread.sleep(100);
             tentativas++;
@@ -315,7 +309,6 @@ class AgenteUDP{
         R.start();
 
         Pacote synAck = new Pacote(true, true, false, false, new byte[0], -1, myIp, IPAddress.getHostAddress());
-        System.out.println("FROM: UDPClient: Enviei " + synAck.toString());
         enviaPacote(synAck);
         Thread.sleep(300);
 
@@ -336,7 +329,6 @@ class AgenteUDP{
                 enviar = new Pacote(false, false, false, true, d.getDados(), d.getOffset(), myIp, IPAddress.getHostAddress());
             }
             estado.addPacote(enviar);
-            System.out.println("FROM: UDPClient: Enviei Pacote " + enviar.toString());
             enviaPacote(enviar);
             // Verificar se o ACK que recebeu está correto e em caso afirmativo envia o ultimo ACK que tiver
             if(estado.reenvia()){
@@ -349,8 +341,8 @@ class AgenteUDP{
         }
 
         estado.esperaRecebe();
-        while(estado.getFase() == 4 || estado.getFase() == 1){
-            if(estado.getFase() == 4){
+        while(estado.getFase() == 5 || estado.getFase() == 2){
+            if(estado.getFase() == 5){
                 System.out.println("FROM: UDPClient: E necessario reenviar ");
                 Integer indice = estado.getLastACK();
                 Pacote reenvio = estado.getPacotes().get(indice);
@@ -359,7 +351,7 @@ class AgenteUDP{
             }
 
             if(estado.getACK().size() == dados.size())
-                estado.setFase(2);
+                estado.setFase(3);
         }
 
         R.join();
@@ -367,9 +359,8 @@ class AgenteUDP{
 
         //Vai adormecer até receber o ultimo ACK em que vai ser um ciclo pq pode ter de reenviar pacotes
         // Fim da conexão
-        while(estado.getFase() != 3){
+        while(estado.getFase() == 3){
             Pacote fim = new Pacote(false, false, true, false, new byte[0], (dados.size() + 1) * 1024, myIp, IPAddress.getHostAddress());
-            System.out.println("FROM UDPClient: Enviei " + fim.toString());
             enviaPacote(fim);
             Thread.sleep(100);
         }
