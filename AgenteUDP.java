@@ -90,7 +90,7 @@ class AgenteUDP{
                 estado.setFase(2);
             }
         }
-
+        //Em pricipio esta parte nao sera necessaria uma vez que quando chegar aqui o servidor tem todos os pacotes
         while(estado.getFase() == 5 || estado.getFase() == 2){
             if(estado.getFase() == 5){
                 System.out.println("FROM: UDPClient: E necessario reenviar ");
@@ -106,6 +106,7 @@ class AgenteUDP{
     }
 
     public void uploadServer(Estado estado, int port){
+        //Verificar o ACK, registar, adormecer x tempo, caso seja o mesmo envia se, caso seja diferente volta a adormecer
         while(estado.getFase() == 2 || estado.getACK().size() != 0){
             if(estado.getFase() == 2 || estado.getACK().size() == 0)
                 estado.esperaRecebe();
@@ -244,7 +245,8 @@ class AgenteUDP{
 
         RecebePacotes R = new RecebePacotes(estado, udpPacket, udpSocket);
         R.start();
-
+        
+        //Verificar o ACK, registar, adormecer x tempo, caso seja o mesmo envia se, caso seja diferente volta a adormecer
         while(estado.getFase() == 2 || estado.getACK().size() != 0){
             if(estado.getFase() == 2 || estado.getACK().size() == 0)
                 estado.esperaRecebe();
@@ -341,7 +343,7 @@ class AgenteUDP{
                 estado.setFase(2);
             }
         }
-
+        //Em pricipio esta parte nao sera necessaria uma vez que quando chegar aqui o servidor tem todos os pacotes
         estado.esperaRecebe();
         while(estado.getFase() == 5 || estado.getFase() == 2){
             if(estado.getFase() == 5){

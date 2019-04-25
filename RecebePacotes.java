@@ -32,6 +32,9 @@ class RecebePacotes extends Thread{
                 psh.bytes2pacote(receivePacket.getData());
                 if(psh.getPsh()){
                     System.out.println("FROM: RecebePacotes: Recebi " + psh.toString());
+                    //verificar se o pacote recebido é o que se pretende receber caso seja adicionar a lista de pacotes e o ACK passa a ser o mesmo
+                    //Caso seja um antigo que falte receber adicionar a lista bem como todos os que estao a frente da lista e atualizar o ACK como maior offset que esteja correto
+                    //Caso seja um que não estava a espera de receber adicionar a lista e enviar um ACK com o offset que esta em falta
                     this.estado.addPacote(psh);
                     this.estado.addACK(psh.getOffset());
                     this.estado.acordaRecebe();

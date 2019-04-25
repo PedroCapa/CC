@@ -19,6 +19,7 @@ class RecebeACK extends Thread{
       			this.socket.receive(receivePacket);
       			p.bytes2pacote(receivePacket.getData());
 		      	if(p.pshAck()){
+		      		//Alterar o ACK caso o offset seja maior do que o atual
 			      	System.out.println("FROM RecebeACK: Receber " + p);
       				this.estado.addACK(p.getOffset());
       				this.estado.acordaRecebe();
