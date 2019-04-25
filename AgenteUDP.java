@@ -32,25 +32,28 @@ class AgenteUDP{
         }
     }
 
-    public List<Dados> getFile(byte [] tipo_conexao) throws IOException{
+    public List<Dados> getFile(byte [] tipo_conexao) throws IOException, FicheiroNaoExisteException{
         try{
             TransfereCC tcc = new TransfereCC();
             String str = new String(tipo_conexao);
             String [] filename = str.split(" ");
             //Testar se o filename tem tamanha correto e se ficheiro existe
             if(filename.length > 0){
-                System.out.println("E para fazer download " + filename[1].length());
                 String name = filename[1];
                 List<Dados> dados = tcc.file2Dados(name);
+                System.out.println("E para fazer download " + filename[1].length());
                 return dados;
             }
             else{
                 //Trocar IOException por uma Excecao criada
-                throw new IOException("Qual o nome do ficheiro\n");
+                throw new FicheiroNaoExisteException("O ficheiro nao existe ficheiro\n");
             }
         }
         catch(IOException e){
             throw new IOException(e);
+        }
+        catch(FicheiroNaoExisteException e){
+            throw new FicheiroNaoExisteException(e.getMessage());
         }
     }
 
@@ -115,7 +118,7 @@ class AgenteUDP{
         }
     }
 
-    public List<Pacote> servidor() throws Exception, IOException{
+    public List<Pacote> servidor() throws Exception, IOException, FicheiroNaoExisteException{
         this.udpSocket = new DatagramSocket(7777);
         Lock lock = new ReentrantLock();
         Condition espera = lock.newCondition();
@@ -144,6 +147,10 @@ class AgenteUDP{
             throw new IOException(e);
         }
 
+        catch(FicheiroNaoExisteException e){
+            throw new FicheiroNaoExisteException(e.getMessage());
+        }
+
         this.IPAddress = udpPacket.getAddress();// substituir por syn.getOrigem ???
         int port = udpPacket.getPort();                 // Ver o q faz
 
@@ -156,10 +163,7 @@ class AgenteUDP{
 
         while(estado.getFase() != 2){
             Pacote synAck = new Pacote(true, true, false, false, new byte[0], -1, syn.getDestino(), syn.getOrigem());
-            sendData = synAck.pacote2bytes();
-            DatagramPacket udpPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port); // Ver o IPAddress e a port
-            udpSocket.send(udpPacket);
-            System.out.println("FROM: UDPServer: Enviei " + synAck.toString());
+            enviaPacoteServidor(synAck, port);
             Thread.sleep(200);
         }
 
@@ -203,7 +207,7 @@ class AgenteUDP{
         }
     }
 
-    public List<Pacote> download(String filename) throws Exception{
+    public List<Pacote> download(String filename) throws Exception, ConexaoNaoEstabelecidaException{
         Estado estado = new Estado();
         Lock lock = new ReentrantLock();
         Condition espera = lock.newCondition();
@@ -231,9 +235,8 @@ class AgenteUDP{
 
         if(tentativas == 10){
             ccc.interrupt();
-            System.out.println("Nao foi aceite o pedido");
             udpSocket.close();
-            return (new ArrayList<Pacote>());
+            throw new ConexaoNaoEstabelecidaException("Não foi possível estabelecer uma conexão");
         }
 
         Pacote synAck = new Pacote(true, true, false, false, new byte[0], -1, myIp, IPAddress.getHostAddress());
@@ -271,7 +274,7 @@ class AgenteUDP{
         return estado.getPacotes();
     }
 
-    public void upload(List<Dados> dados) throws Exception{
+    public void upload(List<Dados> dados) throws Exception, ConexaoNaoEstabelecidaException{
         Estado estado = new Estado();
         Lock lock = new ReentrantLock();
         Condition espera = lock.newCondition();
@@ -300,9 +303,8 @@ class AgenteUDP{
 
         if(tentativas == 10){
             ccc.interrupt();
-            System.out.println("Nao foi aceite o pedido");
             udpSocket.close();
-            return;
+            throw new ConexaoNaoEstabelecidaException("Não foi possível estabelecer uma conexão");
         }
 
         RecebeACK R = new RecebeACK(estado, udpSocket);

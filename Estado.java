@@ -132,7 +132,7 @@ class Estado{
    public boolean reenvia(){
       lock.lock();
       try{
-         if(this.fase == 4)
+         if(this.fase == 5)
             return true;
          else return false;
       }
