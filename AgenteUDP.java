@@ -4,9 +4,7 @@ import java.util.ArrayList;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.ArrayList;
-import java.util.List;
-
+import java.util.*;
 /*O agenteUDP so envia e recebe pacotes, o transporteUDP faz o resto
    TRansfereCC processa o pedido de conexao
    Enviar e receber datagramas e o agenteUDP
@@ -58,58 +56,46 @@ class AgenteUDP{
     }
 
     public void downloadServer(Estado estado, List<Dados> dados, int port){
-        
         int tamanho = dados.size();
-        for(int i = 0; i < tamanho; i++){
-            Dados d = dados.get(i);
-            Pacote enviar = new Pacote();
-            if(i == tamanho - 1){
-                try{
-                    enviar = new Pacote(false, false, true, true, d.getDados(), d.getOffset(), IPAddress.getLocalHost().getHostAddress(), IPAddress.getHostAddress());
+        int x = 1;
+        try{
+            for(int i = 0; i < tamanho; i++){ 
+                int last = 0;
+                for(; i < i + x && i < tamanho; i++){
+                    Dados d = dados.get(i);
+                    Pacote enviar;
+                    if(i == tamanho - 1){
+                        enviar = new Pacote(false, false, true, true, d.getDados(), d.getOffset(), IPAddress.getLocalHost().getHostAddress(), IPAddress.getHostAddress());
+                        estado.setNumero(enviar.getOffset() + enviar.tamanhoDados());
+                    }
+                    else{
+                        enviar = new Pacote(false, false, false, true, d.getDados(), d.getOffset(), IPAddress.getLocalHost().getHostAddress(), IPAddress.getHostAddress());
+                    }
+                    estado.addPacote(enviar);
+                    enviaPacoteServidor(enviar, port);
+                    last = enviar.getOffset();
                 }
-                catch(UnknownHostException e){
-                    System.out.println(e);
+                Thread.sleep(1000);
+                while(estado.getACK() <= last){
+                    Pacote reenvia = estado.getPacoteWithOffset(estado.getACK());
+                    enviaPacote(reenvia);
+                    Thread.sleep(1000);
                 }
-            }
-            else{
-                try{
-                    enviar = new Pacote(false, false, false, true, d.getDados(), d.getOffset(), IPAddress.getLocalHost().getHostAddress(), IPAddress.getHostAddress());
-                }
-                catch(UnknownHostException e){
-                    System.out.println(e);
-                }
-            }
-            estado.addPacote(enviar);
-            enviaPacoteServidor(enviar, port);
-            // Verificar se o ACK que recebeu está correto e em caso afirmativo envia o ultimo ACK que tiver
-            if(estado.reenvia()){
-                System.out.println("E preciso reenviar ");
-                Integer indice = estado.getLastACK();
-                Pacote reenvio = estado.getPacotes().get(indice);
-                enviaPacote(reenvio);
-                estado.setFase(2);
+                x *= 2;
             }
         }
-        //Em pricipio esta parte nao sera necessaria uma vez que quando chegar aqui o servidor tem todos os pacotes
-        while(estado.getFase() == 5 || estado.getFase() == 2){
-            if(estado.getFase() == 5){
-                System.out.println("FROM: UDPClient: E necessario reenviar ");
-                Integer indice = estado.getLastACK();
-                Pacote reenvio = estado.getPacotes().get(indice);
-                enviaPacote(reenvio);
-                estado.esperaRecebe();
-            }
-
-            if(estado.getACK().size() == dados.size())
-                estado.setFase(3);
+        catch(InterruptedException e){
+            System.out.println(e.getMessage());
+        }
+        catch(UnknownHostException e){
+            System.out.println(e.getMessage());
         }
     }
 
     public void uploadServer(Estado estado, int port){
         //Verificar o ACK, registar, adormecer x tempo, caso seja o mesmo envia se, caso seja diferente volta a adormecer
-        while(estado.getFase() == 2 || estado.getACK().size() != 0){
-            if(estado.getFase() == 2 || estado.getACK().size() == 0)
-                estado.esperaRecebe();
+        while(estado.getFase() == 2){
+            estado.esperaRecebe();
             byte [] sendData = new byte[1024];
             Integer i = estado.enviaAck();
             if(i != -1){
@@ -157,7 +143,7 @@ class AgenteUDP{
 
         //System.out.println(this.IPAddress.toString());
 
-        Estado estado = new Estado(new ArrayList<>(), syn.getDestino(), syn.getOrigem(), new ArrayList<>(), 1, dados.size(), lock, espera, controlo);
+        Estado estado = new Estado(new ArrayList<>(), new TreeMap<>(), syn.getDestino(), syn.getOrigem(), 0, 1, dados.size(), lock, espera, controlo);
         
         ControloConexaoServidor ccs = new ControloConexaoServidor(estado, udpPacket, udpSocket);
         ccs.start();
@@ -218,7 +204,7 @@ class AgenteUDP{
         this.IPAddress = InetAddress.getByName("localhost");
         List<Pacote> dados = new ArrayList<>();
 
-        estado = new Estado(new ArrayList<>(), myIp, IPAddress.getHostAddress(), new ArrayList<>(), 0, dados.size(), lock, espera, controlo);
+        estado = new Estado(new ArrayList<>(), new TreeMap<>(), myIp, IPAddress.getHostAddress(), 0, 0, dados.size(), lock, espera, controlo);
         //Começar a thread receberACK
         ControloConexaoCliente ccc = new ControloConexaoCliente(estado, udpSocket);
         ccc.start();
@@ -247,9 +233,8 @@ class AgenteUDP{
         R.start();
         
         //Verificar o ACK, registar, adormecer x tempo, caso seja o mesmo envia se, caso seja diferente volta a adormecer
-        while(estado.getFase() == 2 || estado.getACK().size() != 0){
-            if(estado.getFase() == 2 || estado.getACK().size() == 0)
-                estado.esperaRecebe();
+        while(estado.getFase() == 2){
+            estado.esperaRecebe();
             byte [] sendData = new byte[1024];
             Integer i = estado.enviaAck();
             if(i != -1){
@@ -267,7 +252,7 @@ class AgenteUDP{
         while(estado.getFase() == 3){
             Pacote fim = new Pacote(false, false, true, false, new byte[0], (dados.size() + 1) * 1024, myIp, IPAddress.getHostAddress());
             enviaPacote(fim);
-            Thread.sleep(100);
+            Thread.sleep(300);
         }
 
         ccc.join();
@@ -286,7 +271,7 @@ class AgenteUDP{
         //this.IPAddress = InetAddress.getByAddress(new byte[]{(byte) 172, (byte)26, (byte)100, (byte)157});
         this.IPAddress = InetAddress.getByName("localhost");
 
-        estado = new Estado(new ArrayList<>(), myIp, IPAddress.getHostAddress(), new ArrayList<>(), 0, dados.size(), lock, espera, controlo);
+        estado = new Estado(new ArrayList<>(), new TreeMap<>(), myIp, IPAddress.getHostAddress(), 0, 0, -1, lock, espera, controlo);
         //Começar a thread receberACK
         ControloConexaoCliente ccc = new ControloConexaoCliente(estado, udpSocket);
         ccc.start();
@@ -323,39 +308,35 @@ class AgenteUDP{
         //Envia ACK a dizer que vai começar a transmitir os dados
         // Envio de dados Nesta parte e para criar pacotes de acordo com a lista de bytes e enviar para o Servidor
         int tamanho = dados.size();
-        for(int i = 0; i < tamanho; i++){
-            Dados d = dados.get(i);
-            Pacote enviar;
-            if(i == tamanho - 1){
-                enviar = new Pacote(false, false, true, true, d.getDados(), d.getOffset(), myIp, IPAddress.getHostAddress());
-            }
-            else{
-                enviar = new Pacote(false, false, false, true, d.getDados(), d.getOffset(), myIp, IPAddress.getHostAddress());
-            }
-            estado.addPacote(enviar);
-            enviaPacote(enviar);
-            // Verificar se o ACK que recebeu está correto e em caso afirmativo envia o ultimo ACK que tiver
-            if(estado.reenvia()){
-                System.out.println("E preciso reenviar ");
-                Integer indice = estado.getLastACK();
-                Pacote reenvio = estado.getPacotes().get(indice);
-                enviaPacote(reenvio);
-                estado.setFase(2);
+        int x = 1;
+        try{
+            for(int i = 0; i < tamanho; i++){ 
+                int last = 0;
+                for(; i < i + x && i < tamanho; i++){
+                    Dados d = dados.get(i);
+                    Pacote enviar;
+                    if(i == tamanho - 1){
+                        enviar = new Pacote(false, false, true, true, d.getDados(), d.getOffset(), myIp, IPAddress.getHostAddress());
+                        estado.setNumero(enviar.getOffset() + enviar.tamanhoDados());
+                    }
+                    else{
+                        enviar = new Pacote(false, false, false, true, d.getDados(), d.getOffset(), myIp, IPAddress.getHostAddress());
+                    }
+                    estado.addPacote(enviar);
+                    enviaPacote(enviar);
+                    last = enviar.getOffset();
+                }
+                Thread.sleep(1000);
+                while(estado.getACK() <= last){
+                    Pacote reenvia = estado.getPacoteWithOffset(estado.getACK());
+                    enviaPacote(reenvia);
+                    Thread.sleep(1000);
+                }
+                x *= 2;
             }
         }
-        //Em pricipio esta parte nao sera necessaria uma vez que quando chegar aqui o servidor tem todos os pacotes
-        estado.esperaRecebe();
-        while(estado.getFase() == 5 || estado.getFase() == 2){
-            if(estado.getFase() == 5){
-                System.out.println("FROM: UDPClient: E necessario reenviar ");
-                Integer indice = estado.getLastACK();
-                Pacote reenvio = estado.getPacotes().get(indice);
-                enviaPacote(reenvio);
-                estado.esperaRecebe();
-            }
-
-            if(estado.getACK().size() == dados.size())
-                estado.setFase(3);
+        catch(InterruptedException e){
+            System.out.println(e.getMessage());
         }
 
         R.join();

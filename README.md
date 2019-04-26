@@ -21,3 +21,5 @@ Quando o servidor for enviar um ACK espera um x tempo para ver se recebe mais al
 Servidor não receber corretamente:
 O servidor observa que o offset é alto demais então envia ACK com o offset da variável de estado que corresponde ao último offset do ACK enviado, adiciona à lista,...
 Em vez de adicionar o pacote à lista de pacotes adiciona a uma lista auxiliar.
+
+verificar caso o pacote seja repetido

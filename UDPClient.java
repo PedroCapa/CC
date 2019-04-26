@@ -1,3 +1,4 @@
+
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
@@ -97,6 +98,7 @@ class UDPClient{
 
     }
 */
+    /*
     public void upload(List<Dados> dados) throws Exception{
         Estado estado = new Estado();
         Lock lock = new ReentrantLock();
@@ -197,4 +199,5 @@ class UDPClient{
         ccc.join();
         clientSocket.close();
     }
+*/
 }

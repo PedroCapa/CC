@@ -30,19 +30,20 @@ class ControloConexaoCliente extends Thread{
 
 		//Colocar thread a dormir para recebePacotes o acordar
 		this.estado.esperaControlo();
-
         this.estado.setFase(3);
         this.estado.acordaRecebe();
 		try{
-			DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-        	this.clientSocket.receive(receivePacket);
-        	Pacote fim = new Pacote();
-        	fim.bytes2pacote(receivePacket.getData());
-        	if(fim.finAck()){
-        		System.out.println("FROM ControloConexaoCliente: Recebi " + fim.toString());
-            	this.estado.setFase(4);
-				this.estado.acordaRecebe();
-        	}
+			while(this.estado.getFase() == 3){
+				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+        		this.clientSocket.receive(receivePacket);
+    	    	Pacote fim = new Pacote();
+	 	       	fim.bytes2pacote(receivePacket.getData());
+        		if(fim.finAck()){
+        			System.out.println("FROM ControloConexaoCliente: Recebi " + fim.toString());
+            		this.estado.setFase(4);
+					this.estado.acordaRecebe();
+        		}
+			}
         		
 		}
 		catch(IOException e){}

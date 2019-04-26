@@ -37,6 +37,17 @@ class Pacote{
 		this.destino = null;
 	}
 
+	Pacote(Pacote p){
+		this.ack = p.getAck();
+		this.syn = p.getSyn();
+		this.fin = p.getFin();
+		this.psh = p.getPsh();
+		this.dados = p.getDados();
+		this.offset = p.getOffset();
+		this.origem = p.getOrigem();
+		this.destino = p.getDestino();
+	}
+
 	public boolean getAck(){
 		return this.ack;
 	}
@@ -76,7 +87,7 @@ class Pacote{
 		str += (this.psh) ? "PSH ": "";
 		str += (this.fin) ? "FIN ": "";
 		//String data = new String(dados);
-		//str += data;
+		str += this.offset;
 		return str;
 	}
 
@@ -151,6 +162,10 @@ class Pacote{
 
 	public boolean finAck(){
 		return (this.fin && this.ack && !this.psh);
+	}
+
+	public int tamanhoDados(){
+		return this.dados.length;
 	}
 }
 

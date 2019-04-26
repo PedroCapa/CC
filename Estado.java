@@ -1,10 +1,10 @@
 import java.io.*;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
 /*O agenteUDP so envia e recebe pacotes, o transporteUDP faz o resto
    TRansfereCC processa o pedido de conexao
    Enviar e receber datagramas e o agenteUDP
@@ -13,11 +13,12 @@ import java.util.concurrent.locks.ReentrantLock;
 // Para ja isto pode ser usado para o cliente indicar que ficheiro quer receber e se a conexão foi aceite
 class Estado{
    private List<Pacote> pacotes;
+   public Map<Integer, Pacote> adiantados;
    private String origem;
    private String destino;
    //int portaDest;
    //int portaOrigem;
-   private List<Integer> ACK;
+   private Integer ACK;
    private int fase;
    private int numero; //numero de pacotes de dados que serao enviados
    private Lock lock;
@@ -26,11 +27,10 @@ class Estado{
 
    public Estado(){
       this.pacotes = new ArrayList<>();
+      this.adiantados = new TreeMap<>((p1, p2) -> Integer.compare(p1, p2));
       this.origem = null;
       this.destino = null;
-      //this.portaDest = 0;
-      //this.portaOrigem = 0;
-      this.ACK = new ArrayList<>();
+      this.ACK = 0;
       this.fase = 0;
       this.numero = 0;
       this.lock = new ReentrantLock();
@@ -38,11 +38,13 @@ class Estado{
       this.controlo = lock.newCondition();
    }
 
-   public Estado(List<Pacote> pacotes, String origem, String destino, List<Integer> ACK, int fase, int numero, Lock lock, Condition recebe, Condition controlo){
+   public Estado(List<Pacote> pacotes, TreeMap<Integer, Pacote> adiantados,String origem, String destino, Integer ACK, int fase, int numero, Lock lock, Condition recebe, Condition controlo){
       this.pacotes = new ArrayList<>(pacotes);
+      this.adiantados = new TreeMap<>((p1, p2) -> Integer.compare(p1, p2));
+      this.adiantados.putAll(adiantados);
       this.origem = origem;
       this.destino = destino;
-      this.ACK = new ArrayList<>(ACK);
+      this.ACK = ACK;
       this.fase = fase;
       this.numero = numero;
       this.lock = lock;
@@ -70,25 +72,21 @@ class Estado{
       }
    }
 
-   public String getOrigem(){
-      lock.lock();
-      try{
-         return this.origem;
-      }
-      finally{
-         lock.unlock();
-      }
-   }
-/*
-   public int getPortaOrigem(){
-      return this.portaOrigem;
-   }
+    public String getOrigem(){
+        lock.lock();
+        try{
+            return this.origem;
+        }
+        finally{
+            lock.unlock();
+        }
+    }
 
-   public int getPortaDest(){
-      return this.portaDest;
-   }
-*/
-   public int getFase(){
+    public Map<Integer, Pacote> getAdiantados(){
+        return new TreeMap<>(this.adiantados);
+    }
+
+    public int getFase(){
       lock.lock();
       try{
          return this.fase;
@@ -108,7 +106,7 @@ class Estado{
       }
    }
 
-   public List<Integer> getACK(){
+   public Integer getACK(){
       lock.lock();
       try{
          return this.ACK;
@@ -141,24 +139,14 @@ class Estado{
       }
    }
 
-   public void addACK(Integer ack){
+   public void setACK(Integer ack){
       lock.lock();
       try{
-         this.ACK.add(ack);
+         this.ACK = ack;
       }
       finally{
          lock.unlock();
       }
-   }
-
-   public Integer getLastACK(){
-        lock.lock();
-        try{
-            return this.ACK.get(this.ACK.size() - 1);
-        }
-        finally{
-            lock.unlock();
-        }
    }
 
    public void esperaRecebe(){
@@ -171,6 +159,16 @@ class Estado{
          lock.unlock();
       }
    }
+
+    public void setNumero(int numero){
+        lock.lock();
+        try{
+             this.numero = numero;
+        }
+        finally{
+            lock.unlock();
+        }
+    }
 
    public void acordaRecebe(){
       lock.lock();
@@ -193,15 +191,25 @@ class Estado{
       }
    }
 
-   public void acordaControlo(){
-      lock.lock();
-      try{
-         controlo.signalAll();
-      }
-      finally{
-         lock.unlock();
-      }
-   }
+    public void acordaControlo(){
+        lock.lock();
+        try{
+            controlo.signalAll();
+        }
+        finally{
+            lock.unlock();
+        }
+    }
+
+    public Pacote getPacoteWithOffset(Integer offset){
+        Pacote p = new Pacote();
+        for(int i = 0; i < pacotes.size(); i++){
+            p = pacotes.get(i);
+            if(p.getOffset() == offset)
+                i = pacotes.size();
+        }
+        return p;
+    }
 
     public void addPacote(Pacote p){
         lock.lock();
@@ -215,17 +223,66 @@ class Estado{
 
     public Integer enviaAck(){
         lock.lock();
+        int x = 0;
         try{
-            if(this.ACK.size() == 0)
-                return -1;
-            else{
-                Integer i = this.ACK.get(0); 
-                this.ACK.remove(0);
-                return i;
+            do{
+                x = this.ACK;
+                Thread.sleep(100);
             }
+            while(x != this.ACK);
+        }
+        catch(InterruptedException e){
+            System.out.println(e.getMessage());
         }
         finally{
             lock.unlock();
         }
+        return x;
+    }
+
+    public Pacote getLastPacote(){
+        return this.pacotes.get(pacotesSize() - 1);
+    }
+
+    public int tamanhoDados(){
+        if(this.pacotes.size() == 0)
+            return -1;
+        else{
+            return this.pacotes.get(pacotesSize() - 1).tamanhoDados();
+        }
+    }
+
+    public int pacotesSize(){
+        return this.pacotes.size();
+    }
+
+    public int lastOffset(){
+        return this.pacotes.get(pacotesSize() - 1).getOffset();
+    }
+
+    public boolean seguinte(int off){
+        int last = lastOffset();
+        int tam = tamanhoDados();
+        if(tam != -1)
+            return (last + tam == off);
+        else
+            return false;
+    }
+
+    public void atualizaAdiantados(){
+        
+        while(adiantados.size() > 0 && seguinte(this.adiantados.get(0).getOffset())){
+            Pacote p = new Pacote(this.adiantados.get(0));
+            this.pacotes.add(p);
+            this.adiantados.remove(0);
+        }
+    }
+
+    public void atualizaACK(){
+        this.ACK = getLastPacote().getOffset() + tamanhoDados();
+    }
+
+    public void addAdiantados(Pacote p){
+        this.adiantados.put(p.getOffset(), p);
     }
 }

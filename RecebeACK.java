@@ -11,23 +11,24 @@ class RecebeACK extends Thread{
 	DatagramSocket socket;
 
 	public void run(){
-		while(this.estado.getACK().size() < this.estado.getNumero()){// Nao recebeu todos os ACK dos ficheiros vai continuar no ciclo
+		int last = -1;
+		int x = 0;
+		while(this.estado.getNumero() == -1 || last <= this.estado.getNumero()){// Nao recebeu todos os ACK dos ficheiros vai continuar no ciclo
       		try{
 				byte[] receiveData = new byte[1024];
       			Pacote p = new Pacote();
 				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
       			this.socket.receive(receivePacket);
       			p.bytes2pacote(receivePacket.getData());
-		      	if(p.pshAck()){
-		      		//Alterar o ACK caso o offset seja maior do que o atual
-			      	System.out.println("FROM RecebeACK: Receber " + p);
-      				this.estado.addACK(p.getOffset());
-      				this.estado.acordaRecebe();
+		      	if(p.pshAck() && p.getOffset() >= this.estado.getACK()){
+		      		System.out.println("FROM: RecebeACK: " + p);
+      				this.estado.setACK(p.getOffset());
+      				last = p.getOffset();
 		      	}
+      			this.estado.acordaRecebe();
       		}
       		catch(IOException e){
       			System.out.println(e);
-
       		}
 		}
         this.estado.setFase(3);
