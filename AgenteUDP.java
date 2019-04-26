@@ -5,12 +5,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.*;
-/*O agenteUDP so envia e recebe pacotes, o transporteUDP faz o resto
-   TRansfereCC processa o pedido de conexao
-   Enviar e receber datagramas e o agenteUDP
-*/
 
-// Para ja isto pode ser usado para o cliente indicar que ficheiro quer receber e se a conexão foi aceite
 class AgenteUDP{
 
     private DatagramSocket udpSocket;
@@ -59,7 +54,7 @@ class AgenteUDP{
         int tamanho = dados.size();
         int x = 1;
         try{
-            for(int i = 0; i < tamanho; i++){ 
+            for(int i = 0; i < tamanho;){ 
                 int last = 0;
                 for(; i < i + x && i < tamanho; i++){
                     Dados d = dados.get(i);
@@ -76,7 +71,7 @@ class AgenteUDP{
                     last = enviar.getOffset();
                 }
                 Thread.sleep(1000);
-                while(estado.getACK() <= last){
+                while(estado.getACK() < last){
                     Pacote reenvia = estado.getPacoteWithOffset(estado.getACK());
                     enviaPacote(reenvia);
                     Thread.sleep(1000);
@@ -114,9 +109,9 @@ class AgenteUDP{
         byte[] sendData = new byte[1024];
  
         //Inicio da conexão
+        Pacote syn = new Pacote();
         this.udpPacket = new DatagramPacket(receiveData, receiveData.length);
         this.udpSocket.receive(udpPacket);
-        Pacote syn = new Pacote();
         syn.bytes2pacote(udpPacket.getData());
         System.out.println("FROM: UDPServer: Recebi " + syn.toString());
         
@@ -250,7 +245,7 @@ class AgenteUDP{
         // Fim da conexão
         estado.esperaRecebe();
         while(estado.getFase() == 3){
-            Pacote fim = new Pacote(false, false, true, false, new byte[0], (dados.size() + 1) * 1024, myIp, IPAddress.getHostAddress());
+            Pacote fim = new Pacote(false, false, true, false, new byte[0], -1, myIp, IPAddress.getHostAddress());
             enviaPacote(fim);
             Thread.sleep(300);
         }
@@ -310,9 +305,10 @@ class AgenteUDP{
         int tamanho = dados.size();
         int x = 1;
         try{
-            for(int i = 0; i < tamanho; i++){ 
+            for(int i = 0; i < tamanho;){ 
                 int last = 0;
-                for(; i < i + x && i < tamanho; i++){
+                int j = i;
+                for(; i < j + x && i < tamanho; i++){
                     Dados d = dados.get(i);
                     Pacote enviar;
                     if(i == tamanho - 1){
@@ -324,10 +320,10 @@ class AgenteUDP{
                     }
                     estado.addPacote(enviar);
                     enviaPacote(enviar);
-                    last = enviar.getOffset();
+                    last = enviar.getOffset() + enviar.tamanhoDados();
                 }
                 Thread.sleep(1000);
-                while(estado.getACK() <= last){
+                while(estado.getACK() < last){
                     Pacote reenvia = estado.getPacoteWithOffset(estado.getACK());
                     enviaPacote(reenvia);
                     Thread.sleep(1000);
@@ -345,7 +341,7 @@ class AgenteUDP{
         //Vai adormecer até receber o ultimo ACK em que vai ser um ciclo pq pode ter de reenviar pacotes
         // Fim da conexão
         while(estado.getFase() == 3){
-            Pacote fim = new Pacote(false, false, true, false, new byte[0], (dados.size() + 1) * 1024, myIp, IPAddress.getHostAddress());
+            Pacote fim = new Pacote(false, false, true, false, new byte[0], -1, myIp, IPAddress.getHostAddress());
             enviaPacote(fim);
             Thread.sleep(100);
         }

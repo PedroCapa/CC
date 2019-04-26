@@ -14,22 +14,13 @@ class RecebeACK extends Thread{
 		int last = -1;
 		int x = 0;
 		while(this.estado.getNumero() == -1 || last <= this.estado.getNumero()){// Nao recebeu todos os ACK dos ficheiros vai continuar no ciclo
-      		try{
-				byte[] receiveData = new byte[1024];
-      			Pacote p = new Pacote();
-				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-      			this.socket.receive(receivePacket);
-      			p.bytes2pacote(receivePacket.getData());
-		      	if(p.pshAck() && p.getOffset() >= this.estado.getACK()){
-		      		System.out.println("FROM: RecebeACK: " + p);
-      				this.estado.setACK(p.getOffset());
-      				last = p.getOffset();
-		      	}
-      			this.estado.acordaRecebe();
-      		}
-      		catch(IOException e){
-      			System.out.println(e);
-      		}
+      		Pacote p = recebeDados();
+		    if(p.pshAck() && p.getOffset() >= this.estado.getACK()){
+		      	System.out.println("FROM: RecebeACK: " + p);
+      			this.estado.setACK(p.getOffset());
+      			last = p.getOffset();
+		    }
+      		this.estado.acordaRecebe();
 		}
         this.estado.setFase(3);
         this.estado.acordaRecebe();
@@ -44,4 +35,18 @@ class RecebeACK extends Thread{
 		this.socket = dp;
 	}
 
+	public Pacote recebeDados(){
+        Pacote psh = new Pacote();
+		try{
+			byte[] receiveData = new byte[1024];
+			DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+      		this.socket.receive(receivePacket);
+      		psh.bytes2pacote(receivePacket.getData());
+		}
+		catch(IOException e){
+			System.out.println(e.getMessage());
+		}finally{
+			return psh;
+		}
+    }
 }

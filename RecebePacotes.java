@@ -24,11 +24,7 @@ class RecebePacotes extends Thread{
 		//verificar o pacote ACk esta correto
         try{
             do{
-        		byte[] receiveData = new byte[1024];
-                Pacote psh = new Pacote();
-                receivePacket = new DatagramPacket(receiveData, receiveData.length);
-                socket.receive(receivePacket);
-                psh.bytes2pacote(receivePacket.getData());
+                Pacote psh = recebeDados();                
                 if(psh.getPsh()){
                     System.out.println("FROM: RecebePacotes: Recebi " + psh.toString());
                     //verificar se o pacote recebido é o que se pretende receber caso seja adicionar a lista de pacotes e o ACK passa a ser o mesmo
@@ -58,9 +54,21 @@ class RecebePacotes extends Thread{
         }
         catch(Exception e){
         }
-		
-        //Acordar thread de controlo de conexao
         this.estado.acordaRecebe();
-        
 	}
+
+    public Pacote recebeDados(){
+        Pacote psh = new Pacote();
+        try{
+            byte[] receiveData = new byte[1024];
+            this.receivePacket = new DatagramPacket(receiveData, receiveData.length);
+            this.socket.receive(receivePacket);
+            psh.bytes2pacote(receivePacket.getData());
+        }
+        catch(IOException e){
+            System.out.println(e.getMessage());
+        }finally{
+            return psh;
+        }
+    }
 }
