@@ -97,10 +97,12 @@ class AgenteUDP{
 
     public void uploadServer(Estado estado, int port){
         //Verificar o ACK, registar, adormecer x tempo, caso seja o mesmo envia se, caso seja diferente volta a adormecer
-        while(estado.getFase() == 2){
+        int i = estado.enviaAck();
+        while(estado.getFase() == 2 || i != estado.getACK()){
+            System.out.println(estado.getFase() + "== 2 || "+i+" != "+estado.getACK());
             estado.esperaRecebe();
+            i=estado.enviaAck();
             byte [] sendData = new byte[1024];
-            Integer i = estado.enviaAck();
             if(i != -1){
                 Pacote pshAck = new Pacote(true, false, false, true, new byte[0], i, estado.getDestino(), estado.getOrigem());
                 enviaPacoteServidor(pshAck, port);
@@ -237,10 +239,11 @@ class AgenteUDP{
         R.start();
         
         //Verificar o ACK, registar, adormecer x tempo, caso seja o mesmo envia se, caso seja diferente volta a adormecer
-        while(estado.getFase() == 2){
-            byte [] sendData = new byte[1024];
+        int i = estado.enviaAck();
+        while(estado.getFase() == 2 || i != estado.getACK()){
             estado.esperaRecebe();
-            Integer i = estado.enviaAck();
+            i = estado.enviaAck();
+            byte [] sendData = new byte[1024];
             if(i != -1){
                 Pacote pshAck = new Pacote(true, false, false, true, new byte[0], i, estado.getDestino(), estado.getOrigem());
                 enviaPacote(pshAck);

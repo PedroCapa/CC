@@ -24,6 +24,8 @@ class Estado{
    private Lock lock;
    private Condition recebe;
    private Condition controlo;
+   private boolean receber;
+   private boolean controlar;
 
    public Estado(){
       this.pacotes = new ArrayList<>();
@@ -36,6 +38,8 @@ class Estado{
       this.lock = new ReentrantLock();
       this.recebe = lock.newCondition();
       this.controlo = lock.newCondition();
+      this.receber = true;
+      this.controlar = true;
    }
 
    public Estado(List<Pacote> pacotes, TreeMap<Integer, Pacote> adiantados,String origem, String destino, Integer ACK, int fase, int numero, Lock lock, Condition recebe, Condition controlo){
@@ -50,6 +54,8 @@ class Estado{
       this.lock = lock;
       this.recebe = recebe;
       this.controlo = controlo;
+      this.receber = true;
+      this.controlar = true;
    }
 
    public List<Pacote> getPacotes(){
@@ -152,7 +158,10 @@ class Estado{
    public void esperaRecebe(){
       lock.lock();
       try{
+      	while(receber){
          recebe.await();
+      	}
+      	receber=true;
       }
       catch(InterruptedException e){}
       finally{
@@ -174,6 +183,7 @@ class Estado{
       lock.lock();
       try{
          recebe.signalAll();
+         receber=false;
       }
       finally{
          lock.unlock();
@@ -183,7 +193,10 @@ class Estado{
    public void esperaControlo(){
       lock.lock();
       try{
+      	while(controlar){
          controlo.await();
+      	}
+      	controlar=true;
       }
       catch(InterruptedException e){}
       finally{
@@ -195,6 +208,7 @@ class Estado{
         lock.lock();
         try{
             controlo.signalAll();
+            controlar=false;
         }
         finally{
             lock.unlock();
@@ -221,7 +235,7 @@ class Estado{
         }
     }
 
-    public Integer enviaAck(){
+    public int enviaAck(){
         lock.lock();
         int x = 0;
         try{
@@ -230,7 +244,6 @@ class Estado{
                 Thread.sleep(100);
             }
             while(x != this.ACK);
-            this.ACK = -1;
         }
         catch(InterruptedException e){
             System.out.println(e.getMessage());

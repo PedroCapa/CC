@@ -56,6 +56,7 @@ class RecebePacotes extends Thread{
         }
         catch(Exception e){
         }
+                    System.out.println("Recebi tudo");
         this.estado.acordaRecebe();
 	}
 
