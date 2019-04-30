@@ -20,6 +20,10 @@ class Dados{
 		return this.offset;
 	}
 
+	public Integer tamanhoDados(){
+		return this.dados.length;
+	}
+
 	public String toString() {
 		String str = this.offset + " ";
 		String data = new String(dados);

@@ -230,6 +230,7 @@ class Estado{
                 Thread.sleep(100);
             }
             while(x != this.ACK);
+            this.ACK = -1;
         }
         catch(InterruptedException e){
             System.out.println(e.getMessage());
@@ -276,6 +277,21 @@ class Estado{
             this.pacotes.add(p);
             this.adiantados.remove(0);
         }
+    }
+
+    public boolean eRepetido(Integer offset){
+        boolean f = false;
+        for(Pacote p: this.pacotes)
+            if(p.getOffset() == offset)
+                f = true;
+        if(f)
+            return true;
+        else{
+            for(Integer i: this.adiantados.keySet())
+                if(i == offset)
+                    f = true;
+        }
+        return f;
     }
 
     public void atualizaACK(){

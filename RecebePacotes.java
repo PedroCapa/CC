@@ -37,15 +37,17 @@ class RecebePacotes extends Thread{
                     || (this.estado.getPacotes().size() > 0 && this.estado.seguinte(psh.getOffset()) && this.estado.getAdiantados().size() != 0)){
                         this.estado.addPacote(psh);
                         this.estado.atualizaAdiantados();
-                        this.estado.setACK(this.estado.lastOffset());
+                        this.estado.atualizaACK();
                     }
+                    //Caso seja repetido
+                    else if (this.estado.eRepetido(psh.getOffset()));
                     //Caso seja um que não estava a espera de receber adicionar a lista e enviar um ACK com o offset que esta em falta
                     else{
                         this.estado.addAdiantados(psh);
                     }
                     this.estado.acordaRecebe();
                 }
-                if(psh.pshFin()){
+                if(psh.pshFin() && this.estado.getAdiantados().size() == 0){
                     System.out.println("Recebi ultimo");
                     this.estado.setFase(3);
                 }

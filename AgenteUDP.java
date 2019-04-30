@@ -12,6 +12,13 @@ class AgenteUDP{
     private DatagramPacket udpPacket;
     private InetAddress IPAddress;
 
+    public Integer tamDados(List<Dados> dados){
+        int i = 0;
+        for(Dados d: dados)
+            i += d.tamanhoDados();
+        return i;
+    }
+
     public void enviaPacoteServidor(Pacote p, int port){
         try{
             byte[] sendData = new byte[1024];
@@ -53,22 +60,23 @@ class AgenteUDP{
     public void downloadServer(Estado estado, List<Dados> dados, int port){
         int tamanho = dados.size();
         int x = 1;
+        estado.setNumero(tamDados(dados));
         try{
             for(int i = 0; i < tamanho;){ 
                 int last = 0;
-                for(; i < i + x && i < tamanho; i++){
+                int j = i;
+                for(; i < j + x && i < tamanho; i++){
                     Dados d = dados.get(i);
                     Pacote enviar;
                     if(i == tamanho - 1){
                         enviar = new Pacote(false, false, true, true, d.getDados(), d.getOffset(), IPAddress.getLocalHost().getHostAddress(), IPAddress.getHostAddress());
-                        estado.setNumero(enviar.getOffset() + enviar.tamanhoDados());
                     }
                     else{
                         enviar = new Pacote(false, false, false, true, d.getDados(), d.getOffset(), IPAddress.getLocalHost().getHostAddress(), IPAddress.getHostAddress());
                     }
                     estado.addPacote(enviar);
                     enviaPacoteServidor(enviar, port);
-                    last = enviar.getOffset();
+                    last = enviar.getOffset() + enviar.tamanhoDados();
                 }
                 Thread.sleep(1000);
                 while(estado.getACK() < last){
@@ -98,6 +106,7 @@ class AgenteUDP{
                 enviaPacoteServidor(pshAck, port);
             }
         }
+        System.out.println("Enviei tudo");
     }
 
     public List<Pacote> servidor() throws Exception, IOException, FicheiroNaoExisteException{
@@ -229,8 +238,8 @@ class AgenteUDP{
         
         //Verificar o ACK, registar, adormecer x tempo, caso seja o mesmo envia se, caso seja diferente volta a adormecer
         while(estado.getFase() == 2){
-            estado.esperaRecebe();
             byte [] sendData = new byte[1024];
+            estado.esperaRecebe();
             Integer i = estado.enviaAck();
             if(i != -1){
                 Pacote pshAck = new Pacote(true, false, false, true, new byte[0], i, estado.getDestino(), estado.getOrigem());
@@ -304,6 +313,7 @@ class AgenteUDP{
         // Envio de dados Nesta parte e para criar pacotes de acordo com a lista de bytes e enviar para o Servidor
         int tamanho = dados.size();
         int x = 1;
+        estado.setNumero(tamDados(dados));
         try{
             for(int i = 0; i < tamanho;){ 
                 int last = 0;
@@ -313,7 +323,6 @@ class AgenteUDP{
                     Pacote enviar;
                     if(i == tamanho - 1){
                         enviar = new Pacote(false, false, true, true, d.getDados(), d.getOffset(), myIp, IPAddress.getHostAddress());
-                        estado.setNumero(enviar.getOffset() + enviar.tamanhoDados());
                     }
                     else{
                         enviar = new Pacote(false, false, false, true, d.getDados(), d.getOffset(), myIp, IPAddress.getHostAddress());

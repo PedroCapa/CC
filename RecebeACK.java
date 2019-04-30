@@ -13,7 +13,7 @@ class RecebeACK extends Thread{
 	public void run(){
 		int last = -1;
 		int x = 0;
-		while(this.estado.getNumero() == -1 || last <= this.estado.getNumero()){// Nao recebeu todos os ACK dos ficheiros vai continuar no ciclo
+		while(last <= this.estado.getNumero()){// Nao recebeu todos os ACK dos ficheiros vai continuar no ciclo
       		Pacote p = recebeDados();
 		    if(p.pshAck() && p.getOffset() >= this.estado.getACK()){
 		      	System.out.println("FROM: RecebeACK: " + p);
