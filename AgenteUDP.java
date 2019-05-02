@@ -40,7 +40,7 @@ class AgenteUDP{
             byte[] buf = new byte[4*1024];
             DatagramPacket udpPacket = new DatagramPacket(buf,buf.length);
             udpSocket.receive(udpPacket);
-            Pacote ret = new Pacote();
+            Pacote ret = new Pacote();System.out.println(udpPacket.getLength());
             ret.bytes2pacote(Arrays.copyOf(udpPacket.getData(),udpPacket.getLength()));
             return ret;
         }
@@ -50,7 +50,7 @@ class AgenteUDP{
 
     /** Recebe uma mensagem e insere a porta e IP da origem no estado */
     public Pacote accept(){
-        byte[] buf = new byte[1024];System.out.println(udpSocket.getLocalAddress()+"  "+udpSocket.getLocalPort());
+        byte[] buf = new byte[4*1024];System.out.println(udpSocket.getLocalAddress()+"  "+udpSocket.getLocalPort());
         DatagramPacket udpPacket = new DatagramPacket(buf,buf.length);
         try{
             udpSocket.receive(udpPacket);

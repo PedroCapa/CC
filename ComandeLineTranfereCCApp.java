@@ -43,9 +43,9 @@ class ComandeLineTransfereCCApp{
 		FileOutputStream fos = new FileOutputStream("Teste/Recebi.txt");
 		TransfereCC tcc = new TransfereCC(InetAddress.getLocalHost(),4000); //PASSAR A THREAD
 		tcc.get(filename);
-		byte[] lido = new byte[1000];
-		int bytesLidos;
-		while((bytesLidos = tcc.read(lido))!=0){
+		byte[] lido;
+		//int bytesLidos;
+		while((lido = tcc.read(1000)).length!=0){ //Para ler indica-se o maximo de bytes a ler e recebe-se uma array de bytes
             fos.write(lido);
 		}
         fos.close();

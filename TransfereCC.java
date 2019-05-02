@@ -9,6 +9,7 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.net.*;
 import java.util.Set;
+import java.util.Arrays;
 import java.util.TreeSet;
 
 
@@ -41,10 +42,11 @@ class TransfereCC{
 		lock.unlock();
 		return ret;
 	}
-	public int read(byte[] arr){
+	public byte[] read(int size){
 		lock.lock();
 
-		int bytesLidos = Math.min(bRemaining,arr.length);		//Qt de bytes que deve ler
+		int bytesLidos = Math.min(bRemaining,size);		//Qt de bytes que deve ler
+		byte[] arr = new byte[bytesLidos];
 		int tamanhoRestante = buffer.length - bCursor;			//bytes até ao final do array do buffer
 		if(bytesLidos < tamanhoRestante){
 			System.arraycopy(buffer,bCursor,arr,0,bytesLidos);
@@ -59,8 +61,7 @@ class TransfereCC{
 		}
 
 		lock.unlock();
-
-		return bytesLidos;
+		return arr;
 	}
 
 	public void write(byte[] arr){
@@ -154,7 +155,7 @@ class TransfereCC{
         bytesLidos = fis.read(fileContent);
         while(bytesLidos != -1){System.out.println(bytesLidos+"  "+pedido.getWindow());
         	estado.esperaWindow(seq+bytesLidos);			//Espera caso nao tenha espaço na janela
-        	Pacote pacote = new Pacote(false,false,false,true,false,fileContent,getAvailableSpaceInBuffer(),seq,"lol","lol");
+        	Pacote pacote = new Pacote(false,false,false,true,false,Arrays.copyOf(fileContent,bytesLidos),getAvailableSpaceInBuffer(),seq,"lol","lol");
         	seq += bytesLidos;
         	//listPac.add(pacote);
         	agente.send(pacote);
