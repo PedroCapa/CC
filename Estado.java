@@ -16,15 +16,17 @@ class Estado{
 
 	private String origem;
 	private String destino;
-	private int portaDest;
 	private int portaOrigem;
-
+	private int portaDest;
 	private Lock lock;
 	private Condition recebe;
 	private boolean receber;
-	private Condition flowWindowC;
-	private int flowWindow;
-	private int lastAck;
+	private Condition ackReceivedC;			
+	private int flowWindow;					//Tamanho da janela
+	private int lastAck;					//Maior Ack recebido
+	private int timeout;					//Tempo para receber um ACK até que reenvie (em ms)
+	private List<Pacote> listPac;			//Lista de pacotes ainda não ACK
+	private boolean transferir;				//Flag que indica se a transferencia ainda está a decorrer
 
 
    public Estado(){
@@ -36,11 +38,47 @@ class Estado{
       this.receber = true;
    }
 
-	public void esperaWindow(int bytes){				//Pode sair pq ganhou espaço ou houve timeout; Se criar thread apenas para ler ou uma apenas para retransmitir deve ser melhor
+   public Estado(String origem, String destino, int portaOrigem, int portaDest){
+      this.origem = origem;
+      this.destino = destino;
+      this.portaOrigem = portaOrigem;
+      this.portaDest = portaDest;
+
+      this.lock = new ReentrantLock();
+      this.recebe = lock.newCondition();
+      this.receber = true;
+
+      this.flowWindow = 0;
+      this.lastAck = 0;
+      this.timeout = 100;
+      this.listPac = new ArrayList<>();
+   }
+
+
+   	public Pacote timer(){
+   		lock.lock();
+   		try{
+   			while(listPac.isEmpty()){
+				enviado.await();	 								//esperar que algum timeout inicie
+   			}
+			while(!listPac.isEmpty()){
+				if(!ackReceivedC.await(timeout,MILLISECONDS)){		//começar a espera
+					return listPac[0];								//Se levou timeout reenvia menor
+				}
+			}										
+		}
+		catch(InterruptedException e){}
+		finally{
+		 lock.unlock();
+		}
+		return null;
+   	}
+
+	public void esperaWindow(int bytes){				//Pode sair pq ganhou espaço
 		lock.lock();
 		try{
 			while(bytes>flowWindow+lastAck){
-		 		flowWindowC.await();
+		 		ackReceivedC.await();
 			}
 		}
 		catch(InterruptedException e){}
@@ -51,8 +89,11 @@ class Estado{
 
 	public void setLastAck(int ack){			//DEVE DEPOIS ELIMINAR PACOTES DO BUFFER DOS ENVIADOS
 		lock.lock();
-		this.lastAck = Math.max(this.lastAck,ack);
-		flowWindowC.signalAll();
+		if(ack>this.lastAck){
+			this.lastAck = ack;
+			listPac.removeIf(e->e.getOffset()<ack);
+			ackReceivedC.signalAll();
+		}
 		lock.unlock();
 	}
 

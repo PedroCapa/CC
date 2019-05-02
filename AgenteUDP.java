@@ -9,15 +9,28 @@ import java.util.*;
 class AgenteUDP{
 
 
-    private InetAddress IPAddress;
-    private 
+    private Estado estado;
+    private DatagramSocket udpSocket;
+
+    public AgenteUDP(Estado e){
+        this.estado = e;
+        udpSocket = new DatagramSocket(e.getPortaOrigem(),e.getOrigem());
+    }
 
 
+    public void send(Pacote p){
+        byte[] sendData = p.pacote2bytes();
+        this.udpPacket = new DatagramPacket(sendData, sendData.length, estado.getDestino(), estado.getPortaDestino());
+        this.udpSocket.send(this.udpPacket);
+    }
 
-
-
-
-
+    public Pacote receive(){
+        DatagramPacket udpPacket = new DatagramPacket();
+        udpSocket.receive(udpPacket);
+        Pacote ret = new Pacote();
+        ret.bytes2pacote(udpPacket.getData());
+        return ret;
+    }
 
 
 
