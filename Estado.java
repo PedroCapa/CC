@@ -14,8 +14,8 @@ import java.util.concurrent.locks.ReentrantLock;
 class Estado{
 
 
-	private String origem;
-	private String destino;
+	private InetAdress origem;
+	private InetAdress destino;
 	private int portaOrigem;
 	private int portaDest;
 	private Lock lock;
@@ -38,7 +38,7 @@ class Estado{
       this.receber = true;
    }
 
-   public Estado(String origem, String destino, int portaOrigem, int portaDest){
+   public Estado(InetAdress origem, InetAdress destino, int portaOrigem, int portaDest){
       this.origem = origem;
       this.destino = destino;
       this.portaOrigem = portaOrigem;

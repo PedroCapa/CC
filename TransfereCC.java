@@ -80,8 +80,8 @@ class TransfereCC{
 
 
 	public void get(filename){
-		Estado estado = new Estado();
-		this.agente = new AgenteUDP(IPAddress,7777,estado);
+		Estado estado = new Estado(InetAddress.getLocalHost(),IPAddress,0,7777);
+		this.agente = new AgenteUDP(estado);
 		
 		//Criação e envio do pedido
 		String request = "GET " + filename;
@@ -117,14 +117,18 @@ class TransfereCC{
 
 
 	public void iniciaServidor(){
-		Estado estado = new Estado()
 		//Aceita conexoes, o seguinte deve ser numa thread a parte
 
 
-		Pacote pedido = estado.esperaPedido();
-        String [] filename = str.split(" ");
+
+		Estado estado = new Estado(InetAddress.getLocalHost(),null,7777,0);
+		this.agente = new AgenteUDP(estado);
+		Pacote pedido = agente.accept();
+
+		//Pacote pedido = estado.esperaPedido();
+        String [] filename = (new String(pedido.getDados())).split(" ");
 		//Verifica se é GET
-		int window = pedido.getWindow();		//bytes disponiveis no buffer do recetor
+		this.estado.setFlowWindow(pedido.getWindow());		//bytes disponiveis no buffer do recetor
 
         File file = new File(filename[1]);
 
@@ -132,18 +136,17 @@ class TransfereCC{
         int bytesLidos,seq = 0;
         byte[] fileContent = new byte[1000];
         //criar thread para gerir acks
+        RecebeAck rack = new RecebeAck(estado,this.agente);
+        rack.start();
         List<Pacote> listPac = new ArrayList<Pacote>();				//Quando recebe uma ACK deve ser retirado o pacote correspondente, talvez por no estado
         bytesLidos = fis.read(fileContent);
         while(bytesLidos != -1){
-        	estado.esperaWindow(seq+bytesLidos)					//Espera caso nao tenha espaço na janela; se voltar falso -> timeout
+        	estado.esperaWindow(seq+bytesLidos)					//Espera caso nao tenha espaço na janela
         	Pacote pacote = new Pacote(false,false,false,true,false,fileContent,getRemaining(),seq,"lol","lol");
         	seq += bytesLidos;
         	listPac.add(pacote);
         	agente.send(pacote);
         	bytesLidos = fis.read(fileContent);
-        	}else{
-        		agente.send(listPac.get(0));					//Envia pacote mais antigo nao ACK; FAZER ISTO NUMA THREAD QUE GERE OS TIMEOUTS; 
-        	}
         }
 
 

@@ -14,7 +14,11 @@ class AgenteUDP{
 
     public AgenteUDP(Estado e){
         this.estado = e;
-        udpSocket = new DatagramSocket(e.getPortaOrigem(),e.getOrigem());
+        if(e.getPortaOrigem() == 0){
+            this.udpSocket = new DatagramSocket();
+        }else{
+            this.udpSocket = new DatagramSocket(e.getPortaOrigem(),e.getOrigem());
+        }
     }
 
 
@@ -27,6 +31,17 @@ class AgenteUDP{
     public Pacote receive(){
         DatagramPacket udpPacket = new DatagramPacket();
         udpSocket.receive(udpPacket);
+        Pacote ret = new Pacote();
+        ret.bytes2pacote(udpPacket.getData());
+        return ret;
+    }
+
+    /** Recebe uma mensagem e insere a porta e IP da origem no estado */
+    public Pacote accept(){
+        DatagramPacket udpPacket = new DatagramPacket();
+        udpSocket.receive(udpPacket);
+        this.estado.setDestino(udpPacket.getAddress());
+        this.estado.setPortaDest(udpPacket.getPort());
         Pacote ret = new Pacote();
         ret.bytes2pacote(udpPacket.getData());
         return ret;
