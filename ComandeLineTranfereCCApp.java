@@ -1,15 +1,19 @@
+import java.io.FileOutputStream;
 import java.io.File;
+import java.net.*;
+import java.io.IOException;
+import java.io.FileNotFoundException;
 
 class ComandeLineTransfereCCApp{
 
 	public static void main(String args[]) throws FicheiroNaoExisteException{
 		try{
-  			TransfereCC tcc = new TransfereCC();
+  			
   			if(args.length > 0){
   				File filename = new File(args[1]);
 				if(args[0].equals("put") && filename.exists()){
 					System.out.println("Entrei no upload");
-					enviaFicheiro(args[1]);
+					//enviaFicheiro(args[1]);
 				}
 				else if(args[0].equals("get")){
 					System.out.println("Entrei no download");
@@ -17,6 +21,7 @@ class ComandeLineTransfereCCApp{
 				}
 			}
 			else if(args.length == 0){
+					System.out.println("Server iniciado");TransfereCC tcc = new TransfereCC(InetAddress.getLocalHost(),4000);
 					tcc.iniciaServidor();
   			}
   			else{
@@ -26,21 +31,24 @@ class ComandeLineTransfereCCApp{
 		catch(FicheiroNaoExisteException e){
 			System.out.println(e.getMessage());
 		}
-		catch(ConexaoNaoEstabelecidaException e){
+		catch(Exception e){
+			e.printStackTrace();
+		}
+		/*catch(ConexaoNaoEstabelecidaException e){
             System.out.println(e.getMessage());
-        }
+        }*/
 	}
 
-	public void readFile(String filename){
+	public static void readFile(String filename) throws FileNotFoundException,UnknownHostException,IOException{
 		FileOutputStream fos = new FileOutputStream("Teste/Recebi.txt");
-		TransfereCC tcc = new TransfereCC("localhost");
+		TransfereCC tcc = new TransfereCC(InetAddress.getLocalHost(),4000); //PASSAR A THREAD
 		tcc.get(filename);
-		byte[] lido;
+		byte[] lido = new byte[1000];
 		int bytesLidos;
 		while((bytesLidos = tcc.read(lido))!=0){
             fos.write(lido);
 		}
         fos.close();
-		tcc.close();
+		//tcc.close();
 	}
 }

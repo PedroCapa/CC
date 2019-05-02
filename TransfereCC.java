@@ -7,6 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
+import java.net.*;
+import java.util.Set;
+import java.util.TreeSet;
 
 
 import java.util.concurrent.locks.Condition;
@@ -29,11 +32,12 @@ class TransfereCC{
 		this.buffer = new byte[bufferSize];
 		this.bCursor = 0;
 		this.bRemaining = 0;
+		this.lock = new ReentrantLock();
 	}
 
-	public int getRemaining(){
+	public int getAvailableSpaceInBuffer(){
 		lock.lock();
-		int ret = bRemaining;
+		int ret = buffer.length - bRemaining;
 		lock.unlock();
 		return ret;
 	}
@@ -50,7 +54,7 @@ class TransfereCC{
 		else{
 			System.arraycopy(buffer,bCursor,arr,0,tamanhoRestante);
 			System.arraycopy(buffer,0,arr,tamanhoRestante,bytesLidos - tamanhoRestante);
-			bCursor = bytes - tamanhoRestante;
+			bCursor = bytesLidos - tamanhoRestante;
 			bRemaining -= bytesLidos;
 		}
 
@@ -79,32 +83,39 @@ class TransfereCC{
 
 
 
-	public void get(filename){
+	public void get(String filename)throws UnknownHostException{
 		Estado estado = new Estado(InetAddress.getLocalHost(),IPAddress,0,7777);
 		this.agente = new AgenteUDP(estado);
 		
 		//Criação e envio do pedido
 		String request = "GET " + filename;
-		Pacote pedido = new Pacote(false,false,false,false,true,request.getBytes(),getRemaining(),0,"lol","lol");
+		Pacote pedido = new Pacote(false,false,false,false,true,request.getBytes(),getAvailableSpaceInBuffer(),0,"lol","lol");
 		boolean confirmado = false;
 		while(!confirmado){
 			agente.send(pedido);
-			confirmado = estado.esperaConfirmacao(100);			//Substituir por agente.receive() e fazer aqui a confirmaçao
+			confirmado =true;// estado.esperaConfirmacao(100);			//Substituir por agente.receive() e fazer aqui a confirmaçao
 		}
 
-
 		int seq = 0;
-		Pacote ack = new Pacote(true,false,false,false,false,new byte[0],getRemaining(),seq,"lol","lol");
+		Pacote ack = new Pacote(true,false,false,false,false,new byte[0],getAvailableSpaceInBuffer(),seq,"lol","lol");
 		//Começa a receber o ficheiro
+		TreeSet<Pacote> pacBuffer = new TreeSet<>((Pacote p1, Pacote p2) -> p1.getOffset()-p2.getOffset());
 		boolean terminado = false;
-		while(!terminado){
-			Pacote recebido = estado.getPacote();
-			if(/*Verificação de integridade*/ && recebido.isPSH() && recebido.getOffset() == seq){	//GBN por enquanto
-				write(recebido.getDados);										//Extração e entrega à aplicação
-				seq += 1000;
-				ack = new Pacote(true,false,false,false,false,new byte[0],getRemaining(),seq,"lol","lol");
+		while(!terminado){System.out.println(seq);
+			//Pacote recebido = estado.getPacote();
+			Pacote recebido = agente.receive();
+			if(/*Verificação de integridade*/true && recebido.getPsh() && seq+buffer.length>=recebido.getOffset()+recebido.tamanhoDados()){ //Verifica se esta dentro da janela
+				Pacote escrever = recebido;
+				while(escrever != null && seq == escrever.getOffset()){
+					write(escrever.getDados());										//Extração e entrega à aplicação
+					seq += recebido.tamanhoDados();
+					escrever = pacBuffer.pollFirst();
+				}if(escrever != null){
+					pacBuffer.add(escrever);
+				}
+				ack = new Pacote(true,false,false,false,false,new byte[0],getAvailableSpaceInBuffer(),seq,"lol","lol");
 			}
-			if(/*integridade*/ && recebido.isFIN()){
+			if(/*integridade*/true && recebido.getFin()){
 				break;
 			}
 			agente.send(ack);
@@ -116,7 +127,7 @@ class TransfereCC{
 
 
 
-	public void iniciaServidor(){
+	public void iniciaServidor() throws UnknownHostException, IOException{
 		//Aceita conexoes, o seguinte deve ser numa thread a parte
 
 
@@ -128,36 +139,42 @@ class TransfereCC{
 		//Pacote pedido = estado.esperaPedido();
         String [] filename = (new String(pedido.getDados())).split(" ");
 		//Verifica se é GET
-		this.estado.setFlowWindow(pedido.getWindow());		//bytes disponiveis no buffer do recetor
+		estado.setFlowWindow(pedido.getWindow());		//bytes disponiveis no buffer do recetor
 
-        File file = new File(filename[1]);
-
-        FileInputStream fis = new FileInputStream(file);
+        FileInputStream fis = new FileInputStream("Teste/Teste.txt");
         int bytesLidos,seq = 0;
         byte[] fileContent = new byte[1000];
         //criar thread para gerir acks
-        RecebeAck rack = new RecebeAck(estado,this.agente);
+        RecebeACK rack = new RecebeACK(estado,this.agente);
         rack.start();
-        List<Pacote> listPac = new ArrayList<Pacote>();				//Quando recebe uma ACK deve ser retirado o pacote correspondente, talvez por no estado
+        //criar thread para gerir timeouts
+        Temporizador temp = new Temporizador(estado,this.agente);
+        temp.start();
+        //List<Pacote> listPac = new ArrayList<Pacote>();				//Quando recebe uma ACK deve ser retirado o pacote correspondente, talvez por no estado
         bytesLidos = fis.read(fileContent);
-        while(bytesLidos != -1){
-        	estado.esperaWindow(seq+bytesLidos)					//Espera caso nao tenha espaço na janela
-        	Pacote pacote = new Pacote(false,false,false,true,false,fileContent,getRemaining(),seq,"lol","lol");
+        while(bytesLidos != -1){System.out.println(bytesLidos+"  "+pedido.getWindow());
+        	estado.esperaWindow(seq+bytesLidos);			//Espera caso nao tenha espaço na janela
+        	Pacote pacote = new Pacote(false,false,false,true,false,fileContent,getAvailableSpaceInBuffer(),seq,"lol","lol");
         	seq += bytesLidos;
-        	listPac.add(pacote);
+        	//listPac.add(pacote);
         	agente.send(pacote);
+            estado.enviou(pacote);
         	bytesLidos = fis.read(fileContent);
         }
 
 
         fis.close();
+
+
+        agente.send(new Pacote(false,false,true,false,false,fileContent,getAvailableSpaceInBuffer(),seq,"lol","lol"));
+
 	}
 
 
 
 
 
-
+/*
 
 
     List<Dados> file2Dados(String filename) throws IOException, FicheiroNaoExisteException{

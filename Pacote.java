@@ -88,6 +88,7 @@ class Pacote{
 		return this.destino;
 	}	
 
+
 	public String toString() {
 		String str = "";
 		str += (this.ack) ? "ACK ": "";
@@ -100,7 +101,7 @@ class Pacote{
 	}
 
 	byte[] pacote2bytes(){
-		byte[] pac = new byte[dados.length + 16];
+		byte[] pac = new byte[dados.length + 9];
 
 		int flags = this.ack?1:0;
 		flags += this.syn?2:0;
@@ -146,15 +147,15 @@ class Pacote{
 		dados = new byte[copia.length - 9];
 
 		int flags = (int)copia[0];
-		ack = (flags % 2);
-		flags >> 1;
-		syn = (flags % 2);
-		flags >> 1;
-		fin = (flags % 2);
-		flags >> 1;
-		psh = (flags % 2);
-		flags >> 1;
-		req = (flags % 2);
+		ack = (flags % 2) == 1;
+		flags = flags >> 1;
+		syn = (flags % 2) == 1;
+		flags = flags >> 1;
+		fin = (flags % 2) == 1;
+		flags = flags >> 1;
+		psh = (flags % 2) == 1;
+		flags = flags >> 1;
+		req = (flags % 2) == 1;
 /*
 		ack = copia[0] != 0;
 		syn = copia[1] != 0;
@@ -202,4 +203,5 @@ class Pacote{
 	public int tamanhoDados(){
 		return this.dados.length;
 	}
+
 }

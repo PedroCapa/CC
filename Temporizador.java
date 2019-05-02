@@ -6,7 +6,7 @@ class Temporizador extends Thread{
 	private Estado estado;
 	private AgenteUDP agente;
 
-	RecebeACK(Estado e, AgenteUDP a){
+	public Temporizador(Estado e, AgenteUDP a){
 		this.estado = e;
 		this.agente = a;
 	}

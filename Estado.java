@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.TimeUnit;
 
 /*O agenteUDP so envia e recebe pacotes, o transporteUDP faz o resto
    TRansfereCC processa o pedido de conexao
@@ -14,8 +15,8 @@ import java.util.concurrent.locks.ReentrantLock;
 class Estado{
 
 
-	private InetAdress origem;
-	private InetAdress destino;
+	private InetAddress origem;
+	private InetAddress destino;
 	private int portaOrigem;
 	private int portaDest;
 	private Lock lock;
@@ -24,9 +25,10 @@ class Estado{
 	private Condition ackReceivedC;			
 	private int flowWindow;					//Tamanho da janela
 	private int lastAck;					//Maior Ack recebido
-	private int timeout;					//Tempo para receber um ACK até que reenvie (em ms)
+	private long timeout;					//Tempo para receber um ACK até que reenvie (em ms)
 	private List<Pacote> listPac;			//Lista de pacotes ainda não ACK
 	private boolean transferir;				//Flag que indica se a transferencia ainda está a decorrer
+	private Condition enviado;
 
 
    public Estado(){
@@ -38,22 +40,60 @@ class Estado{
       this.receber = true;
    }
 
-   public Estado(InetAdress origem, InetAdress destino, int portaOrigem, int portaDest){
-      this.origem = origem;
-      this.destino = destino;
-      this.portaOrigem = portaOrigem;
-      this.portaDest = portaDest;
+	public Estado(InetAddress origem, InetAddress destino, int portaOrigem, int portaDest){
+		this.origem = origem;
+		this.destino = destino;
+		this.portaOrigem = portaOrigem;
+		this.portaDest = portaDest;
 
-      this.lock = new ReentrantLock();
-      this.recebe = lock.newCondition();
-      this.receber = true;
+		this.lock = new ReentrantLock();
+		this.recebe = lock.newCondition();
+		this.receber = true;
 
-      this.flowWindow = 0;
-      this.lastAck = 0;
-      this.timeout = 100;
-      this.listPac = new ArrayList<>();
+		this.flowWindow = 0;
+		this.lastAck = 0;
+		this.timeout = 100;
+		this.listPac = new ArrayList<>();
+		this.transferir = true;				
+		this.enviado = lock.newCondition();
+		this.ackReceivedC = lock.newCondition();
    }
 
+   public boolean transferir(){
+   	lock.lock();
+   	boolean ret = transferir;
+   	lock.unlock();
+   	return ret;
+   }
+
+
+	public int getPortaOrigem(){
+		return portaOrigem;
+	}
+
+	public InetAddress getOrigem(){
+		return origem;
+	}
+
+	public int getPortaDestino(){
+		return portaDest;
+	}
+
+	public void setPortaDestino(int p){
+		this.portaDest = p;
+	}
+
+	public InetAddress getDestino(){
+		return destino;
+	}
+
+	public void setDestino(InetAddress d){
+		this.destino = d;
+	}
+
+	public void setFlowWindow(int w){
+		this.flowWindow = w;
+	}
 
    	public Pacote timer(){
    		lock.lock();
@@ -62,8 +102,8 @@ class Estado{
 				enviado.await();	 								//esperar que algum timeout inicie
    			}
 			while(!listPac.isEmpty()){
-				if(!ackReceivedC.await(timeout,MILLISECONDS)){		//começar a espera
-					return listPac[0];								//Se levou timeout reenvia menor
+				if(!ackReceivedC.await(timeout,TimeUnit.MILLISECONDS)){		//começar a espera
+					return listPac.get(0);								//Se levou timeout reenvia menor
 				}
 			}										
 		}
@@ -72,6 +112,12 @@ class Estado{
 		 lock.unlock();
 		}
 		return null;
+   	}
+
+   	public void enviou(Pacote p){
+   		lock.lock();
+   		enviado.signalAll();
+   		listPac.add(p);
    	}
 
 	public void esperaWindow(int bytes){				//Pode sair pq ganhou espaço
@@ -97,6 +143,29 @@ class Estado{
 		lock.unlock();
 	}
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
 	public boolean esperaConfirmacao(long tempo){
 		lock.lock();
 		boolean recebeuSinal = true;

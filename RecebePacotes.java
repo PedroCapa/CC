@@ -7,6 +7,64 @@ import java.util.concurrent.locks.ReentrantLock;
 
 class RecebePacotes extends Thread{
 	Estado estado;
+    AgenteUDP agente;
+
+
+    public RecebePacotes(Estado e, AgenteUDP a){
+        this.estado = e;
+        this.agente = a;
+    }
+
+
+    public void run(){
+        //Inicio da conexao
+
+
+        while(estado.transferir()){
+            Pacote pacote = agente.receive();
+            if(/*Verifica integridade*/true){
+                if(pacote.getAck()){
+                    estado.setLastAck(pacote.getOffset());
+                }
+                if(pacote.getPsh()){
+
+                }
+            }
+        }
+
+
+
+
+
+
+        //Fim da conexao
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /*
 	DatagramPacket receivePacket;
 	DatagramSocket socket;
 
@@ -73,5 +131,5 @@ class RecebePacotes extends Thread{
         }finally{
             return psh;
         }
-    }
+    }*/
 }
