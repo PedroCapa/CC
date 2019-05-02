@@ -10,12 +10,14 @@ class Pacote{
 	boolean syn;
 	boolean fin;
 	boolean psh;
+	boolean req; //Pedido
 	byte[] dados;
+	int window;
 	Integer offset;
 	String origem;
 	String destino;
 
-	Pacote(boolean ack, boolean syn, boolean fin, boolean psh, byte[] dados, Integer offset, String origem , String destino){
+	Pacote(boolean ack, boolean syn, boolean fin, boolean psh, boolean req, byte[] dados, int window, Integer offset, String origem , String destino){
 		this.ack = ack;
 		this.syn = syn;
 		this.fin = fin;

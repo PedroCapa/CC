@@ -7,7 +7,51 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 class RecebeACK extends Thread{
-	Estado estado;
+	private Estado estado;
+	private AgenteUDP agente;
+
+
+	RecebeACK(Estado e, AgenteUDP a){
+		this.estado = e;
+		this.agente = a;
+	}
+
+	public void run(){
+		while(estado.transferir()){				//Enquanto ainda se estiver na fase de transferencia
+			Pacote pacote = agente.receive();
+			if(/*Verifica integridade*/){
+				estado.setLastAck(pacote.getACK());
+			}
+		}
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/*
 	DatagramSocket socket;
 
 	public void run(){
@@ -48,5 +92,5 @@ class RecebeACK extends Thread{
 		}finally{
 			return psh;
 		}
-    }
+    }*/
 }

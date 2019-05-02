@@ -12,7 +12,93 @@ import java.util.concurrent.locks.ReentrantLock;
 
 // Para ja isto pode ser usado para o cliente indicar que ficheiro quer receber e se a conexão foi aceite
 class Estado{
-   private List<Pacote> pacotes;
+
+
+	private String origem;
+	private String destino;
+	private int portaDest;
+	private int portaOrigem;
+
+	private Lock lock;
+	private Condition recebe;
+	private boolean receber;
+	private Condition flowWindowC;
+	private int flowWindow;
+	private int lastAck;
+
+
+   public Estado(){
+      this.origem = null;
+      this.destino = null;
+
+      this.lock = new ReentrantLock();
+      this.recebe = lock.newCondition();
+      this.receber = true;
+   }
+
+	public void esperaWindow(int bytes){				//Pode sair pq ganhou espaço ou houve timeout; Se criar thread apenas para ler ou uma apenas para retransmitir deve ser melhor
+		lock.lock();
+		try{
+			while(bytes>flowWindow+lastAck){
+		 		flowWindowC.await();
+			}
+		}
+		catch(InterruptedException e){}
+		finally{
+		 lock.unlock();
+		}
+	}
+
+	public void setLastAck(int ack){			//DEVE DEPOIS ELIMINAR PACOTES DO BUFFER DOS ENVIADOS
+		lock.lock();
+		this.lastAck = Math.max(this.lastAck,ack);
+		flowWindowC.signalAll();
+		lock.unlock();
+	}
+
+	public boolean esperaConfirmacao(long tempo){
+		lock.lock();
+		boolean recebeuSinal = true;
+		try{
+			while(receber){
+		 		recebeuSinal = recebe.await(tempo,MILLISECONDS);
+			}
+			receber=true;
+		}
+		catch(InterruptedException e){}
+		finally{
+		 lock.unlock();
+		}
+		return recebeuSinal;
+	}
+
+	public void acordaRecebe(){
+	  lock.lock();
+	  try{
+	     recebe.signalAll();
+	     receber=false;
+	  }
+	  finally{
+	     lock.unlock();
+	  }
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   /*private List<Pacote> pacotes;
    public Map<Integer, Pacote> adiantados;
    private String origem;
    private String destino;
@@ -313,5 +399,5 @@ class Estado{
 
     public void addAdiantados(Pacote p){
         this.adiantados.put(p.getOffset(), p);
-    }
+    }*/
 }

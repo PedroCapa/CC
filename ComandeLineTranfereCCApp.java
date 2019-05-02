@@ -9,11 +9,11 @@ class ComandeLineTransfereCCApp{
   				File filename = new File(args[1]);
 				if(args[0].equals("put") && filename.exists()){
 					System.out.println("Entrei no upload");
-					tcc.upload(args[1]);
+					enviaFicheiro(args[1]);
 				}
 				else if(args[0].equals("get")){
 					System.out.println("Entrei no download");
-					tcc.download(args[1]);
+					readFile(args[1]);
 				}
 			}
 			else if(args.length == 0){
@@ -29,5 +29,18 @@ class ComandeLineTransfereCCApp{
 		catch(ConexaoNaoEstabelecidaException e){
             System.out.println(e.getMessage());
         }
+	}
+
+	public void readFile(String filename){
+		FileOutputStream fos = new FileOutputStream("Teste/Recebi.txt");
+		TransfereCC tcc = new TransfereCC("localhost");
+		tcc.get(filename);
+		byte[] lido;
+		int bytesLidos;
+		while((bytesLidos = tcc.read(lido))!=0){
+            fos.write(lido);
+		}
+        fos.close();
+		tcc.close();
 	}
 }

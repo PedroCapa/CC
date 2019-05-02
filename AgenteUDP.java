@@ -8,6 +8,40 @@ import java.util.*;
 
 class AgenteUDP{
 
+
+    private InetAddress IPAddress;
+    private 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
     private DatagramSocket udpSocket;
     private DatagramPacket udpPacket;
     private InetAddress IPAddress;
@@ -360,5 +394,5 @@ class AgenteUDP{
 
         ccc.join();
         udpSocket.close();
-    }
+    }*/
 }
