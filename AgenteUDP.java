@@ -58,7 +58,7 @@ class AgenteUDP{
         this.estado.setDestino(udpPacket.getAddress());
         this.estado.setPortaDestino(udpPacket.getPort());
         Pacote ret = new Pacote();
-        ret.bytes2pacote(udpPacket.getData());
+        ret.bytes2pacote(Arrays.copyOf(udpPacket.getData(),udpPacket.getLength()));
         return ret;
     }
 

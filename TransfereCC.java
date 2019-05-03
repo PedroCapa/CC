@@ -69,7 +69,6 @@ class TransfereCC{
 		//Verifica se é GET
 		estado.setFlowWindow(pedido.getWindow());		//bytes disponiveis no buffer do recetor
 		System.out.println("-"+filename[1]+"-"+filename[0]+"-");
-		filename[1]="Teste/Teste.txt";
         FileInputStream fis = new FileInputStream(filename[1]);
         int bytesLidos,seq = 0;
         byte[] fileContent = new byte[1000];
@@ -101,9 +100,9 @@ class TransfereCC{
 
         agente.send(new Pacote(false,false,true,false,false,fileContent,buffer.getAvailableSpace(),seq,"lol","lol"));
 
-        try{System.out.println("1");
-	        temp.join();System.out.println("2");
-	        rack.join();System.out.println("3");
+        try{
+	        temp.join();
+	        rack.join();
         }catch(InterruptedException exc){}
 	}
 
