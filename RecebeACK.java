@@ -20,7 +20,7 @@ class RecebeACK extends Thread{
 		while(estado.transferir()){				//Enquanto ainda se estiver na fase de transferencia
 			Pacote pacote = agente.receive();
 			if(/*Verifica integridade*/true){
-				estado.setLastAck(pacote.getOffset());
+				estado.setLastAck(pacote);
 			}
 		}
 	}

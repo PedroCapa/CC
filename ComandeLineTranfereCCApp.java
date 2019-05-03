@@ -34,9 +34,6 @@ class ComandeLineTransfereCCApp{
 		catch(Exception e){
 			e.printStackTrace();
 		}
-		/*catch(ConexaoNaoEstabelecidaException e){
-            System.out.println(e.getMessage());
-        }*/
 	}
 
 	public static void readFile(String filename) throws FileNotFoundException,UnknownHostException,IOException{
@@ -46,7 +43,7 @@ class ComandeLineTransfereCCApp{
 		byte[] lido;
 		//int bytesLidos;
 		while((lido = tcc.read(1000)).length!=0){ //Para ler indica-se o maximo de bytes a ler e recebe-se uma array de bytes
-            fos.write(lido);
+            fos.write(lido);   
 		}
         fos.close();
 		//tcc.close();

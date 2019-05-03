@@ -24,7 +24,7 @@ class RecebePacotes extends Thread{
             Pacote pacote = agente.receive();
             if(/*Verifica integridade*/true){
                 if(pacote.getAck()){
-                    estado.setLastAck(pacote.getOffset());
+                    estado.setLastAck(pacote);
                 }
                 if(pacote.getPsh()){
 
