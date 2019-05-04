@@ -15,13 +15,13 @@ class ComandeLineTransfereCCApp{
 					System.out.println("Entrei no upload");
 					//enviaFicheiro(args[1]);
 				}
-				else if(args[0].equals("get")){
+				else if(args[1].equals("get")){
 					System.out.println("Entrei no download");
-					readFile(args[1]);
+					readFile(args[0],args[2]);
 				}
 			}
 			else if(args.length == 0){
-					System.out.println("Server iniciado");TransfereCC tcc = new TransfereCC(InetAddress.getLocalHost(),4000);
+					System.out.println("Server iniciado");TransfereCC tcc = new TransfereCC(null,4000);
 					tcc.iniciaServidor();
   			}
   			else{
@@ -36,9 +36,9 @@ class ComandeLineTransfereCCApp{
 		}
 	}
 
-	public static void readFile(String filename) throws FileNotFoundException,UnknownHostException,IOException{
+	public static void readFile(String ip, String filename) throws FileNotFoundException,UnknownHostException,IOException{
 		FileOutputStream fos = new FileOutputStream("Teste/Recebi.txt");
-		TransfereCC tcc = new TransfereCC(InetAddress.getLocalHost(),4000); //PASSAR A THREAD
+		TransfereCC tcc = new TransfereCC(InetAddress.getByName(ip),4000); 
 		tcc.get(filename);
 		byte[] lido;
 		//int bytesLidos;

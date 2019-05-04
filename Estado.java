@@ -41,7 +41,7 @@ class Estado{
 
 		this.flowWindow = 0;
 		this.lastAck = 0;
-		this.lastAck = -1;
+		this.finalAck = -1;
 		this.timeout = 100;
 		this.listPac = new ArrayList<>();
 		this.transferir = true;				
@@ -96,7 +96,7 @@ class Estado{
    		lock.lock();
    		try{
    			while(listPac.isEmpty() && transferir){
-				enviado.await();								//esperar que algum timeout inicie
+				enviado.await();System.out.println("s="+listPac.size());								//esperar que algum timeout inicie
    			}
 			while(!listPac.isEmpty()){
 				if(!ackReceivedC.await(timeout,TimeUnit.MILLISECONDS)){		//começar a espera
@@ -122,6 +122,7 @@ class Estado{
 		lock.lock();
 		try{
 			while(bytes>flowWindow+lastAck){
+System.out.println(bytes+"  "+(flowWindow+lastAck));
 		 		ackReceivedC.await();
 			}
 		}

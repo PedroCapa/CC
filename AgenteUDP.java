@@ -42,6 +42,7 @@ class AgenteUDP{
             udpSocket.receive(udpPacket);
             Pacote ret = new Pacote();System.out.println(udpPacket.getLength());
             ret.bytes2pacote(Arrays.copyOf(udpPacket.getData(),udpPacket.getLength()));
+            System.out.println(ret);
             return ret;
         }
         catch(IOException ex){ex.printStackTrace();}

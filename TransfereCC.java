@@ -36,7 +36,7 @@ class TransfereCC{
 
 
 	public void get(String filename)throws UnknownHostException{
-		Estado estado = new Estado(InetAddress.getLocalHost(),IPAddress,0,7777);
+		Estado estado = new Estado(null,IPAddress,0,7777);
 		this.agente = new AgenteUDP(estado);
 		
 		//Criação e envio do pedido
@@ -60,7 +60,7 @@ class TransfereCC{
 
 
 
-		Estado estado = new Estado(InetAddress.getLocalHost(),null,7777,0);
+		Estado estado = new Estado(null,null,7777,0);
 		this.agente = new AgenteUDP(estado);
 		Pacote pedido = agente.accept();
 
@@ -80,8 +80,8 @@ class TransfereCC{
         temp.start();
         //List<Pacote> listPac = new ArrayList<Pacote>();				//Quando recebe uma ACK deve ser retirado o pacote correspondente, talvez por no estado
         bytesLidos = fis.read(fileContent);
-        while(bytesLidos != -1){System.out.println(bytesLidos+"  "+pedido.getWindow());
-        	estado.esperaWindow(seq+bytesLidos);			//Espera caso nao tenha espaço na janela
+        while(bytesLidos != -1){
+    	estado.esperaWindow(seq+bytesLidos);			//Espera caso nao tenha espaço na janela
         	Pacote pacote = new Pacote(false,false,false,true,false,Arrays.copyOf(fileContent,bytesLidos),buffer.getAvailableSpace(),seq,"lol","lol");
         	seq += bytesLidos;
         	//listPac.add(pacote);
