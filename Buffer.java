@@ -13,7 +13,6 @@ class Buffer{
     private Lock lock;
     private Condition bufferLivre;
     private Condition bufferEscrito;
-    private Condition pedeMais;
     private boolean fim;		//Será verdadeiro quando não se intenciona em escrever mais no buffer
 
 	Buffer(int bufferSize){
@@ -24,7 +23,6 @@ class Buffer{
 		this.bufferLivre = lock.newCondition();
 		this.bufferEscrito = lock.newCondition();
 		this.fim = false;
-		this.pedeMais = lock.newCondition();
 
 	}
 
@@ -42,6 +40,13 @@ class Buffer{
 		return ret;
 	}
 
+	public boolean isClosed(){
+		lock.lock();
+		boolean ret = fim;
+		lock.unlock();
+		return ret;
+	}
+
 	public void waitForAvailableSpace(int bytes){
 		lock.lock();
 		try{
@@ -55,15 +60,19 @@ class Buffer{
 		}
 	}
 
-	public byte[] read(int size, Estado estado, AgenteUDP agente){
+	public byte[] read(int size) throws DadosAindaNaoRecebidos{
 		lock.lock();
 		try{
 			while(bRemaining==0 && !fim){
 				if(!bufferEscrito.await(100,TimeUnit.MILLISECONDS)){
-					agente.sendLastAck();	//Publica a janela aberta
+					throw new DadosAindaNaoRecebidos();	//Publica a janela aberta
 				}
 			}
 		}catch(InterruptedException e){}
+		
+		if(bRemaining==0){
+			return null;
+		}
 
 		int bytesLidos = Math.min(bRemaining,size);		//Qt de bytes que deve ler
 		byte[] arr = new byte[bytesLidos];
@@ -103,15 +112,17 @@ class Buffer{
 
 		lock.unlock();
 	}
+}
 
-	public void pediuMais(){
-		lock.lock();
-		try{
-			while(bRemaining > 0 && !fim)
-				pedeMais.await();
-		}catch(InterruptedException exc){}
-		finally{
-			lock.unlock();
-		}
+
+
+class DadosAindaNaoRecebidos extends Exception{
+	/** Mensagem vazia no caso se tentar fazer registar com um  nome que ja exista*/
+	public DadosAindaNaoRecebidos(){
+		super();
+	}
+	/** Mensagem no caso se tentar fazer registar com um  nome que ja exista*/
+	public DadosAindaNaoRecebidos(String s){
+		super(s);
 	}
 }

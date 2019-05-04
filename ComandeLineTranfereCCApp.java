@@ -42,7 +42,7 @@ class ComandeLineTransfereCCApp{
 		tcc.get(filename);
 		byte[] lido;
 		//int bytesLidos;
-		while((lido = tcc.read(1000)).length!=0){ //Para ler indica-se o maximo de bytes a ler e recebe-se uma array de bytes
+		while((lido = tcc.read(1000))!=null){ //Para ler indica-se o maximo de bytes a ler e recebe-se uma array de bytes
             fos.write(lido);   
 		}
         fos.close();

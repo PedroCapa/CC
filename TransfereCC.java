@@ -32,7 +32,18 @@ class TransfereCC{
 	}
 
 	public byte[] read(int size){
-		return buffer.read(size,estado,agente);
+		byte[] arr = null;
+		boolean leu = false;
+		while(!leu){					//Deve tentar sempre ler
+			try{
+				arr = buffer.read(size);
+				leu = true;
+			}catch(DadosAindaNaoRecebidos e){		//Publica o tamanho de janela atual
+				agente.send(new Pacote(true,false,false,false,false,new byte[0],buffer.getAvailableSpace(),estado.getLastAck(),"lol","lol"));
+			}
+		}
+
+		return arr;
 	}
 
 

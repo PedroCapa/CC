@@ -135,7 +135,7 @@ System.out.println(bytes+"  "+(flowWindow+lastAck));
 	public void setLastAck(Pacote p){			//DEVE DEPOIS ELIMINAR PACOTES DO BUFFER DOS ENVIADOS
 		lock.lock();
 		int ack = p.getOffset();
-		if(ack>this.lastAck){
+		if(ack>this.lastAck || (ack==this.lastAck && p.getWindow()>this.flowWindow)){			//Só interessa atualizar se o ack for maior ou se for igual e uma janela maior
 			this.lastAck = ack;
 			this.flowWindow=p.getWindow();
 			listPac.removeIf(e->e.getOffset()<ack);
@@ -145,6 +145,13 @@ System.out.println(bytes+"  "+(flowWindow+lastAck));
 			}
 		}
 		lock.unlock();
+	}
+
+	public int getLastAck(){			//DEVE DEPOIS ELIMINAR PACOTES DO BUFFER DOS ENVIADOS
+		lock.lock();
+		int ret = this.lastAck;
+		lock.unlock();
+		return ret;
 	}
 
 	public void setFinalAck(int s){		
