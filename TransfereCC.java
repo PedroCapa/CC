@@ -20,6 +20,7 @@ import java.util.concurrent.locks.ReentrantLock;
 class TransfereCC{
 
 	private AgenteUDP agente;
+	private Estado estado;
     private InetAddress IPAddress;
     private Buffer buffer;
 
@@ -31,12 +32,12 @@ class TransfereCC{
 	}
 
 	public byte[] read(int size){
-		return buffer.read(size);
+		return buffer.read(size,estado,agente);
 	}
 
 
 	public void get(String filename)throws UnknownHostException{
-		Estado estado = new Estado(null,IPAddress,0,7777);
+		this.estado = new Estado(null,IPAddress,0,7777);
 		this.agente = new AgenteUDP(estado);
 		
 		//Criação e envio do pedido
@@ -130,19 +131,22 @@ class GetClient extends Thread{
 		while(!terminado){
 			//Pacote recebido = estado.getPacote();
 			Pacote recebido = agente.receive();
-			Pacote escrever = recebido;
+			Pacote escrito = recebido;
 			if(/*Verificação de integridade*/true && recebido.getPsh()){ //Verifica se esta dentro da janela
 				
-				while(escrever != null && seq == escrever.getOffset()){
-					buffer.write(escrever.getDados());										//Extração e entrega à aplicação
-					seq += escrever.tamanhoDados();
-					escrever = pacBuffer.pollFirst();
-				}if(escrever != null && seq != escrever.getOffset()){
-					pacBuffer.add(escrever);
+				while(recebido != null && seq == recebido.getOffset()){
+					buffer.write(recebido.getDados());										//Extração e entrega à aplicação
+					escrito = recebido;
+					seq += recebido.tamanhoDados();
+					recebido = pacBuffer.pollFirst();
+					System.out.println("prox: "+recebido);
+				}if(recebido != null && seq < recebido.getOffset()){
+					pacBuffer.add(recebido);
+					System.out.println("Pacote adicionado: "+recebido);
 				}
 				ack = new Pacote(true,false,false,false,false,new byte[0],buffer.getAvailableSpace(),seq,"lol","lol");
 			}
-			if(/*integridade*/true && escrever.getFin()){
+			if(/*integridade*/true && escrito.getFin()){
 				break;
 			}
 			agente.send(ack);

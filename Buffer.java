@@ -3,7 +3,7 @@
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
+import java.util.concurrent.TimeUnit;
 
 class Buffer{
 
@@ -13,6 +13,7 @@ class Buffer{
     private Lock lock;
     private Condition bufferLivre;
     private Condition bufferEscrito;
+    private Condition pedeMais;
     private boolean fim;		//Será verdadeiro quando não se intenciona em escrever mais no buffer
 
 	Buffer(int bufferSize){
@@ -23,6 +24,7 @@ class Buffer{
 		this.bufferLivre = lock.newCondition();
 		this.bufferEscrito = lock.newCondition();
 		this.fim = false;
+		this.pedeMais = lock.newCondition();
 
 	}
 
@@ -53,11 +55,13 @@ class Buffer{
 		}
 	}
 
-	public byte[] read(int size){
+	public byte[] read(int size, Estado estado, AgenteUDP agente){
 		lock.lock();
 		try{
 			while(bRemaining==0 && !fim){
-				bufferEscrito.await();
+				if(!bufferEscrito.await(100,TimeUnit.MILLISECONDS)){
+					agente.sendLastAck();	//Publica a janela aberta
+				}
 			}
 		}catch(InterruptedException e){}
 
@@ -98,5 +102,16 @@ class Buffer{
 		bufferEscrito.signalAll();
 
 		lock.unlock();
+	}
+
+	public void pediuMais(){
+		lock.lock();
+		try{
+			while(bRemaining > 0 && !fim)
+				pedeMais.await();
+		}catch(InterruptedException exc){}
+		finally{
+			lock.unlock();
+		}
 	}
 }

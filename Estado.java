@@ -99,7 +99,7 @@ class Estado{
 				enviado.await();System.out.println("s="+listPac.size());								//esperar que algum timeout inicie
    			}
 			while(!listPac.isEmpty()){
-				if(!ackReceivedC.await(timeout,TimeUnit.MILLISECONDS)){		//começar a espera
+				if(!ackReceivedC.await(timeout,TimeUnit.MILLISECONDS) && !listPac.isEmpty()){		//começar a espera
 					return listPac.get(0);								//Se levou timeout reenvia menor
 				}
 			}										
