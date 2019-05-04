@@ -130,18 +130,19 @@ class GetClient extends Thread{
 		while(!terminado){
 			//Pacote recebido = estado.getPacote();
 			Pacote recebido = agente.receive();
+			Pacote escrever = recebido;
 			if(/*Verificação de integridade*/true && recebido.getPsh()){ //Verifica se esta dentro da janela
-				Pacote escrever = recebido;
+				
 				while(escrever != null && seq == escrever.getOffset()){
 					buffer.write(escrever.getDados());										//Extração e entrega à aplicação
 					seq += escrever.tamanhoDados();
 					escrever = pacBuffer.pollFirst();
-				}if(escrever != null){
+				}if(escrever != null && seq != escrever.getOffset()){
 					pacBuffer.add(escrever);
 				}
 				ack = new Pacote(true,false,false,false,false,new byte[0],buffer.getAvailableSpace(),seq,"lol","lol");
 			}
-			if(/*integridade*/true && recebido.getFin()){
+			if(/*integridade*/true && escrever.getFin()){
 				break;
 			}
 			agente.send(ack);
