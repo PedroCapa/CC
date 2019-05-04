@@ -134,7 +134,7 @@ class GetClient extends Thread{
 				Pacote escrever = recebido;
 				while(escrever != null && seq == escrever.getOffset()){
 					buffer.write(escrever.getDados());										//Extração e entrega à aplicação
-					seq += recebido.tamanhoDados();
+					seq += escrever.tamanhoDados();
 					escrever = pacBuffer.pollFirst();
 				}if(escrever != null){
 					pacBuffer.add(escrever);
