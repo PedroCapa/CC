@@ -29,6 +29,7 @@ class Estado{
 	private List<Pacote> pacotes;			//Lista de pacotes a receber
 	private Condition recebePacote;
 	private int seq;						//qt de bytes já lidos e escritos
+	private Buffer buffer;					//Buffer de dados a escrever
 
 	/**Construutor usado pelo servidor*/
 	public Estado(){
@@ -50,13 +51,13 @@ class Estado{
    }
 
 	/**Construtor utilizado pelos clientes*/   
-	public Estado(InetAddress destino){
+	public Estado(InetAddress destino, int portaDest, int bs, int flowWindow){
 		this.destino = destino;
-		this.portaDest = 7777;
+		this.portaDest = portaDest;
 
 		this.lock = new ReentrantLock();
 
-		this.flowWindow = 0;
+		this.flowWindow = flowWindow;
 		this.lastAck = 0;
 		this.finalAck = -1;
 		this.timeout = 100;
@@ -66,6 +67,7 @@ class Estado{
 		this.ackReceivedC = lock.newCondition();
 		this.recebePacote = lock.newCondition();
 		this.pacotes = new ArrayList<>();
+		this.buffer = new Buffer(bs); 
    }
 
    	public Pacote receive(){
@@ -83,6 +85,23 @@ class Estado{
    		return p;
    	}
 
+   	public Pacote receive(int ms){
+   		Pacote p = null;
+   		lock.lock();
+   		try{
+	   		while(pacotes.isEmpty()){
+	   			if(!recebePacote.await(ms,TimeUnit.MILLISECONDS)){
+	   				return p;
+	   			}
+	   		}
+	   		p = pacotes.remove(0);
+	   	}catch(InterruptedException e){}
+	   	finally{
+	   		lock.unlock();
+	   	}
+   		return p;
+   	}
+   
    	public void redirecionaPacote(Pacote p){
    		lock.lock();
    		pacotes.add(p);
@@ -210,5 +229,19 @@ class Estado{
 		lock.unlock();
 	}
 
+	public byte[] readBuffer(int size) throws DadosAindaNaoRecebidos{
+		return this.buffer.read(size);
+	}
 
+	public void writeBuffer(byte[] arr){
+		this.buffer.write(arr);
+	}
+
+	public int bufferAvailableSpace(){
+		return this.buffer.getAvailableSpace();
+	}
+
+	public void closeBuffer(){
+		this.buffer.close();
+	}
 }

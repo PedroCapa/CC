@@ -24,7 +24,8 @@ class ComandeLineTransfereCCApp{
 				}
 			}
 			else if(args.length == 0){
-					System.out.println("Server iniciado");TransfereCC tcc = new TransfereCC(4000);
+					System.out.println("Server iniciado");
+					TransfereCC tcc = new TransfereCC(7777);
 					tcc.iniciaServidor();
   			}
   			else{
@@ -34,15 +35,19 @@ class ComandeLineTransfereCCApp{
 		catch(FicheiroNaoExisteException e){
 			System.out.println(e.getMessage());
 		}
+		catch(ConexaoNaoEstabelecidaException e){
+			System.out.println(e.getMessage());
+		}
 		catch(Exception e){
 			e.printStackTrace();
 		}
 	}
 
-	public static void readFile(String ip, String filename) throws FileNotFoundException,UnknownHostException,IOException{
+	public static void readFile(String ip, String filename) throws FileNotFoundException,UnknownHostException,IOException,ConexaoNaoEstabelecidaException{
 		FileOutputStream fos = new FileOutputStream("Teste/Recebi.txt");
 		BufferedOutputStream bos = new BufferedOutputStream(fos);
-		TransfereCC tcc = new TransfereCC(InetAddress.getByName(ip),4000); 
+		TransfereCC tcc = new TransfereCC();
+		tcc.connect(InetAddress.getByName(ip),4000);
 		tcc.get(filename);
 		byte[] lido;
 		//int bytesLidos;
@@ -54,10 +59,11 @@ class ComandeLineTransfereCCApp{
 		//tcc.close();
 	}
 
-	public static void writeFile(String ip, String filename) throws FileNotFoundException,UnknownHostException,IOException{
+	public static void writeFile(String ip, String filename) throws FileNotFoundException,UnknownHostException,IOException,ConexaoNaoEstabelecidaException{
 		FileInputStream fis = new FileInputStream(filename);
 		BufferedInputStream bis = new BufferedInputStream(fis);
-		TransfereCC tcc = new TransfereCC(InetAddress.getByName(ip),4000); 
+		TransfereCC tcc = new TransfereCC();
+		tcc.connect(InetAddress.getByName(ip),4000);
 		tcc.put(filename);
 		byte[] lido = new byte[1000];
 		int bytesLidos;
