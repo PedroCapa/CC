@@ -21,12 +21,14 @@ class Estado{
 	private Condition ackReceivedC;			
 	private int flowWindow;					//Tamanho da janela
 	private int lastAck;					//Maior Ack recebido
-	private int finalAck;					//Ultimo ack a ser recebido
+	private int finalAck;					//Ultimo ack a ser recebido para concluir a transferencia
 	private long timeout;					//Tempo para receber um ACK até que reenvie (em ms)
 	private List<Pacote> listPac;			//Lista de pacotes ainda não ACK
 	private boolean transferir;				//Flag que indica se a transferencia ainda está a decorrer
 	private Condition enviado;
-
+	private List<Pacote> pacotes;			//Lista de pacotes a receber
+	private Condition recebePacote;
+	private int seq;						//qt de bytes já lidos e escritos
 
 	/**Construutor usado pelo servidor*/
 	public Estado(){
@@ -43,6 +45,8 @@ class Estado{
 		this.transferir = true;				
 		this.enviado = lock.newCondition();
 		this.ackReceivedC = lock.newCondition();
+		this.recebePacote = lock.newCondition();
+		this.pacotes = new ArrayList<>();
    }
 
 	/**Construtor utilizado pelos clientes*/   
@@ -60,7 +64,31 @@ class Estado{
 		this.transferir = true;				
 		this.enviado = lock.newCondition();
 		this.ackReceivedC = lock.newCondition();
+		this.recebePacote = lock.newCondition();
+		this.pacotes = new ArrayList<>();
    }
+
+   	public Pacote receive(){
+   		Pacote p = null;
+   		lock.lock();
+   		try{
+	   		while(pacotes.isEmpty()){
+	   			recebePacote.await();
+	   		}
+	   		p = pacotes.remove(0);
+	   	}catch(InterruptedException e){}
+	   	finally{
+	   		lock.unlock();
+	   	}
+   		return p;
+   	}
+
+   	public void redirecionaPacote(Pacote p){
+   		lock.lock();
+   		pacotes.add(p);
+   		recebePacote.signalAll();
+   		lock.unlock();
+   	}
 
  	public boolean transferir(){
 		lock.lock();
@@ -73,6 +101,25 @@ class Estado{
 		lock.lock();
 		this.transferir = false;
 		enviado.signalAll();
+		lock.unlock();
+	}
+
+	public int getSeq(){
+		lock.lock();
+		int ret = seq;
+		lock.unlock();
+		return ret;
+	}
+
+	public void setSeq(int s){
+		lock.lock();
+		this.seq = s;
+		lock.unlock();
+	}
+
+	public void addSeq(int s){
+		lock.lock();
+		this.seq += s;
 		lock.unlock();
 	}
 
@@ -100,7 +147,7 @@ class Estado{
    		lock.lock();
    		try{
    			while(listPac.isEmpty() && transferir){
-				enviado.await();System.out.println("s="+listPac.size());								//esperar que algum timeout inicie
+				enviado.await();								//esperar que algum timeout inicie
    			}
 			while(!listPac.isEmpty()){
 				if(!ackReceivedC.await(timeout,TimeUnit.MILLISECONDS) && !listPac.isEmpty()){		//começar a espera
@@ -125,8 +172,7 @@ class Estado{
 	public void esperaWindow(int bytes){				//Pode sair pq ganhou espaço
 		lock.lock();
 		try{
-			while(bytes>flowWindow+lastAck){
-System.out.println(bytes+"  "+(flowWindow+lastAck));
+			while(bytes+seq>flowWindow+lastAck){;
 		 		ackReceivedC.await();
 			}
 		}

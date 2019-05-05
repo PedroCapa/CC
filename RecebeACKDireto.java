@@ -6,17 +6,19 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-class RecebeACK extends Thread{
+class RecebeACKDireto extends Thread{
 	private Estado estado;
+	private AgenteUDP agente;
 
 
-	RecebeACK(Estado e){
+	RecebeACKDireto(Estado e, AgenteUDP a){
 		this.estado = e;
+		this.agente = a;
 	}
 
 	public void run(){
 		while(estado.transferir()){				//Enquanto ainda se estiver na fase de transferencia
-			Pacote pacote = estado.receive();
+			Pacote pacote = agente.receive();
 			if(pacote.getAck()){
 				estado.setLastAck(pacote);
 			}

@@ -14,7 +14,26 @@ class Pacote{
 	private byte[] dados;
 	private int window;
 	private int offset;
+	private int portaOrigem;
+	private int portaDestino;
+	private InetAddress ipOrigem;
+	private InetAddress ipDestino;
 
+	Pacote(boolean ack, boolean syn, boolean fin, boolean psh, boolean req, byte[] dados, int window, int offset, int portaOrigem, int portaDestino, InetAddress ipOrigem, InetAddress ipDestino){
+		this.ack = ack;
+		this.syn = syn;
+		this.fin = fin;
+		this.psh = psh;
+		this.req = req;
+		this.dados = dados;
+		this.window = window;
+		this.offset = offset;
+		this.portaOrigem = portaOrigem;
+		this.portaDestino = portaDestino;
+		this.ipOrigem = ipOrigem;
+		this.ipDestino = ipDestino;
+	}
+/*
 	Pacote(boolean ack, boolean syn, boolean fin, boolean psh, boolean req, byte[] dados, int window, int offset){
 		this.ack = ack;
 		this.syn = syn;
@@ -25,23 +44,35 @@ class Pacote{
 		this.window = window;
 		this.offset = offset;
 	}
-
+*/
 	Pacote(){
-		this.ack = false;
-		this.syn = false;
-		this.fin = false;
-		this.psh = false;
-		this.dados = new byte[1];
-		this.offset = 0;
 	}
 
-	Pacote(Pacote p){
-		this.ack = p.getAck();
-		this.syn = p.getSyn();
-		this.fin = p.getFin();
-		this.psh = p.getPsh();
-		this.dados = p.getDados();
-		this.offset = p.getOffset();
+	public void setIntervenientes(int portaOrigem, int portaDestino, InetAddress ipOrigem, InetAddress ipDestino){
+		this.portaOrigem = portaOrigem;
+		this.portaDestino = portaDestino;
+		this.ipOrigem = ipOrigem;
+		this.ipDestino = ipDestino;
+	}
+
+	public String getIntervenientes(){
+		return ""+portaOrigem+portaDestino+ipOrigem.toString()+ipDestino.toString();
+	}
+
+	public InetAddress getIpDestino(){
+		return ipDestino;
+	}
+
+	public int getPortaDestino(){
+		return portaDestino;
+	}
+
+	public InetAddress getIpOrigem(){
+		return ipOrigem;
+	}
+
+	public int getPortaOrigem(){
+		return portaOrigem;
 	}
 
 	public boolean getAck(){
@@ -83,6 +114,7 @@ class Pacote{
 		str += (this.syn) ? "SYN ": "";
 		str += (this.psh) ? "PSH ": "";
 		str += (this.fin) ? "FIN ": "";
+		str += (this.req) ? "REQ ": "";
 		//String data = new String(dados);
 		str += this.offset;
 		return str;
