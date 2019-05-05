@@ -21,7 +21,7 @@ class ComandeLineTransfereCCApp{
 				}
 			}
 			else if(args.length == 0){
-					System.out.println("Server iniciado");TransfereCC tcc = new TransfereCC(null,4000);
+					System.out.println("Server iniciado");TransfereCC tcc = new TransfereCC(4000);
 					tcc.iniciaServidor();
   			}
   			else{
