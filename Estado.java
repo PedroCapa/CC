@@ -30,6 +30,7 @@ class Estado{
 	private Condition recebePacote;
 	private int seq;						//qt de bytes já lidos e escritos
 	private Buffer buffer;					//Buffer de dados a escrever
+	private boolean fin;					//Indica se este host já enviou o seu Fin e portanto não pode enviar dados
 
 	/**Construutor usado pelo servidor*/
 	public Estado(){
@@ -48,6 +49,7 @@ class Estado{
 		this.ackReceivedC = lock.newCondition();
 		this.recebePacote = lock.newCondition();
 		this.pacotes = new ArrayList<>();
+		this.fin = false;
    }
 
 	/**Construtor utilizado pelos clientes*/   
@@ -68,6 +70,7 @@ class Estado{
 		this.recebePacote = lock.newCondition();
 		this.pacotes = new ArrayList<>();
 		this.buffer = new Buffer(bs); 
+		this.fin = false;
    }
 
    	public Pacote receive(){
@@ -243,5 +246,19 @@ class Estado{
 
 	public void closeBuffer(){
 		this.buffer.close();
+	}
+
+	public void terminaConexao(){
+		lock.lock();
+		terminaTransferencia();
+		this.fin = true;
+		lock.unlock();
+	}
+
+	public boolean isFin(){
+		lock.lock();
+		boolean ret = this.fin;
+		lock.unlock();
+		return ret;
 	}
 }

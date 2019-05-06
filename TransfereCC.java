@@ -145,7 +145,15 @@ class TransfereCC{
         temp.start();
 	}
 
-
+	public void close(){
+		this.rp.close();
+		try{
+		System.out.println("1");
+			this.rp.join();
+		}catch(InterruptedException e){
+		}
+		System.out.println("2");
+	}
 
 
 	public void iniciaServidor(){
@@ -198,9 +206,9 @@ class GetClient extends Thread{
 			if(/*integridade*/true && escrito.pshFin()){
 				break;
 			}
-			agente.send(ack);
 		}
 
+		agente.send(ack);
 
 		//Término da conexao
 

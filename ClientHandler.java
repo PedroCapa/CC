@@ -74,7 +74,7 @@ class ClientHandler extends Thread{
 	        int bytesLidos;
 	        this.estado.setSeq(0);
 	        byte[] fileContent = new byte[1000];
-	        //criar thread para gerir acks
+	        //criar thread para gerir acks9  ST
 	        RecebeACK rack = new RecebeACK(estado);
 	        rack.start();
 	        //criar thread para gerir timeouts
@@ -83,13 +83,14 @@ class ClientHandler extends Thread{
 	        //List<Pacote> listPac = new ArrayList<Pacote>();				//Quando recebe uma ACK deve ser retirado o pacote correspondente, talvez por no estado
 	        bytesLidos = fis.read(fileContent);
 	        while(bytesLidos != -1){
-	    	estado.esperaWindow(bytesLidos);			//Espera caso nao tenha espaço na janela
+	    		estado.esperaWindow(bytesLidos);			//Espera caso nao tenha espaço na janela
 	        	Pacote pacote = new Pacote(false,false,false,true,false,Arrays.copyOf(fileContent,bytesLidos),estado.bufferAvailableSpace(),estado.getSeq(),0,estado.getPortaDestino(),null,estado.getDestino());
 	        	estado.addSeq(bytesLidos);
 	        	//listPac.add(pacote);
 	        	bytesLidos = fis.read(fileContent);
 	        	if(bytesLidos == -1) {
 			        estado.setFinalAck(estado.getSeq());
+			        pacote.setFin(true);
 	        	}
 	        	agente.send(pacote);
 	            estado.enviou(pacote);
@@ -98,7 +99,7 @@ class ClientHandler extends Thread{
 
 	        fis.close();
 
-	        agente.send(new Pacote(false,false,true,true,false,fileContent,estado.bufferAvailableSpace(),estado.getSeq(),0,estado.getPortaDestino(),null,estado.getDestino()));
+	        //agente.send(new Pacote(false,false,true,true,false,fileContent,estado.bufferAvailableSpace(),estado.getSeq(),0,estado.getPortaDestino(),null,estado.getDestino()));
 
 		    temp.join();
 		    rack.join();

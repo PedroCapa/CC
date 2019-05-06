@@ -56,7 +56,7 @@ class ComandeLineTransfereCCApp{
 		}
 		bos.flush();
         fos.close();
-		//tcc.close();
+		tcc.close();
 	}
 
 	public static void writeFile(String ip, String filename) throws FileNotFoundException,UnknownHostException,IOException,ConexaoNaoEstabelecidaException{

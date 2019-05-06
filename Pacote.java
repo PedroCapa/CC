@@ -87,6 +87,10 @@ class Pacote{
 		return this.fin;
 	}
 
+	public void setFin(boolean f){
+		this.fin = f;
+	}
+
 	public boolean getPsh(){
 		return this.psh;
 	}
