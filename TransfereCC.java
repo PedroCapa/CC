@@ -79,14 +79,26 @@ class TransfereCC{
 		return arr;
 	}
 
+	/**Envia e indica que o ficheiro a transferir terminou*/
+	public void writeFin(byte[] fileContent, int bytesLidos){
+		estado.esperaWindow(bytesLidos);			//Espera caso nao tenha espaço na janela
+
+    	Pacote pacote = new Pacote(false,false,true,true,false,Arrays.copyOf(fileContent,bytesLidos),estado.bufferAvailableSpace(),estado.getSeq(),0,estado.getPortaDestino(),null,estado.getDestino());
+    	estado.addSeq(bytesLidos);
+		
+		estado.setFinalAck(estado.getSeq());
+    	
+    	agente.send(pacote);
+        estado.enviou(pacote);
+
+        try{
+        	rack.join();
+        	temp.join();
+        }catch(InterruptedException exc){}
+	}
 
 	public void write(byte[] fileContent, int bytesLidos){
 
-		if(bytesLidos==-1){
-			estado.setFinalAck(estado.getSeq());
-        	agente.send(new Pacote(false,false,true,true,false,fileContent,estado.bufferAvailableSpace(),estado.getSeq(),0,estado.getPortaDestino(),null,estado.getDestino()));
-        	return;
-		}
 
     	estado.esperaWindow(bytesLidos);			//Espera caso nao tenha espaço na janela
 
@@ -135,7 +147,7 @@ class TransfereCC{
 				confirmado = true;
 			}
 		}
-        this.estado.setSeq(0);
+		this.estado.reset();
 
         //criar thread para gerir acks
         rack = new RecebeACK(estado);
@@ -145,14 +157,34 @@ class TransfereCC{
         temp.start();
 	}
 
+	public void disconnect(){
+		estado.terminaConexao();
+        int i = 0;
+        Pacote p = new Pacote(false,false,true,false,false,new byte[0],this.estado.bufferAvailableSpace(),0,0,estado.getPortaDestino(),null,estado.getDestino());
+        while(i<5){
+            agente.send(p);						//Diz que pretende terminar conexao
+            Pacote recebido = estado.receive(200);              //Se estiver mais de 1 segundo sem resposta, desiste e considera a conexao fechada
+            if(recebido == null){
+                i++;
+            }else if(recebido.finAck()){
+                p = new Pacote(true,false,true,false,false,new byte[0],this.estado.bufferAvailableSpace(),0,0,estado.getPortaDestino(),null,estado.getDestino());
+                while(true){
+                	agente.send(p);
+                    recebido = estado.receive(500);
+                    if(recebido == null) break;
+                }
+                break;
+            }
+        }
+	}
+
 	public void close(){
-		this.rp.close();
+		this.rp.close();System.out.println("AHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH");
+		this.agente.close();
 		try{
-		System.out.println("1");
 			this.rp.join();
 		}catch(InterruptedException e){
 		}
-		System.out.println("2");
 	}
 
 
@@ -189,7 +221,7 @@ class GetClient extends Thread{
 			//Pacote recebido = estado.getPacote();
 			Pacote recebido = estado.receive();
 			Pacote escrito = recebido;
-			if(/*Verificação de integridade*/true && recebido.getPsh()){ //Verifica se esta dentro da janela
+			if(recebido.getPsh()){ //Verifica se esta dentro da janela
 				
 				while(recebido != null && estado.getSeq() == recebido.getOffset()){
 					estado.writeBuffer(recebido.getDados());										//Extração e entrega à aplicação
@@ -197,18 +229,18 @@ class GetClient extends Thread{
 					estado.addSeq(recebido.tamanhoDados());
 					recebido = pacBuffer.pollFirst();
 					System.out.println("prox: "+recebido);
-				}if(recebido != null && estado.getSeq() < recebido.getOffset()){
+				}if(recebido != null && estado.getSeq() < recebido.getOffset()){				//Caso haja receções fora de ordem
 					pacBuffer.add(recebido);
 					System.out.println("Pacote adicionado: "+recebido);
 				}
 				ack = new Pacote(true,false,false,false,false,new byte[0],estado.bufferAvailableSpace(),estado.getSeq(),0,estado.getPortaDestino(),null,estado.getDestino());
 			}
-			if(/*integridade*/true && escrito.pshFin()){
-				break;
+			if(escrito.pshFin()){
+				terminado = true;
 			}
+			agente.send(ack);
 		}
 
-		agente.send(ack);
 
 		//Término da conexao
 

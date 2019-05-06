@@ -56,6 +56,7 @@ class ComandeLineTransfereCCApp{
 		}
 		bos.flush();
         fos.close();
+		tcc.disconnect();
 		tcc.close();
 	}
 
@@ -65,13 +66,21 @@ class ComandeLineTransfereCCApp{
 		TransfereCC tcc = new TransfereCC();
 		tcc.connect(InetAddress.getByName(ip),4000);
 		tcc.put(filename);
-		byte[] lido = new byte[1000];
-		int bytesLidos;
-		while((bytesLidos= bis.read(lido))!=-1){ //Para ler indica-se o maximo de bytes a ler e recebe-se uma array de bytes
-            tcc.write(lido,bytesLidos);
+		byte[] lant = new byte[1000], lido = new byte[1000];
+		int blant = bis.read(lant);
+		int bytesLidos = bis.read(lido);
+		while(bytesLidos!=-1){ //Para ler indica-se o maximo de bytes a ler e recebe-se uma array de bytes
+            tcc.write(lant,blant);
+			blant = bytesLidos;
+			lant = lido;
+			lido = new byte[1000];
+			bytesLidos = bis.read(lido);
 		}
-		tcc.write(lido,bytesLidos);
+		tcc.writeFin(lant,blant);
+
 		bis.close();
 		fis.close();
+		tcc.disconnect();
+		tcc.close();
 	}
 }

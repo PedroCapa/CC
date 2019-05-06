@@ -28,7 +28,7 @@ class RecebePacotes extends Thread{
         Pacote pedido = null;
         while(true){
             pedido = agente.receive();
-            if(!trabalhar.get()) break;
+            if(!trabalhar.get()) {System.out.println("desisto");break;}
             String intervenientes = pedido.getIntervenientes();
             if(/*Integridade*/true){
                 if(pedido.getSyn() && (!estados.containsKey(intervenientes) || estados.get(intervenientes).isFin())){
@@ -38,44 +38,14 @@ class RecebePacotes extends Thread{
                     //cria thread
                     ClientHandler ch = new ClientHandler(e,agente);
                     ch.start();
-                }else if(pedido.getFin() && !pedido.getPsh() && estados.containsKey(intervenientes) && !estados.get(intervenientes).isFin()){ //Termina conexao deste lado quando receber fin do outro
-                    FinalizaConexao fc = new FinalizaConexao(estados.get(intervenientes),agente,bufferSize);
+                }/*else if(pedido.getFin() && !pedido.getPsh() && estados.containsKey(intervenientes) && !estados.get(intervenientes).isFin()){ //Termina conexao deste lado quando receber fin do outro
+                    FinalizaConexao fc = new FinalizaConexao(estados.get(intervenientes),agente,bufferSize);System.out.println("bamos");
                     fc.start();
-                }
+                }*/
                 else{
-                    estados.get(intervenientes).redirecionaPacote(pedido);
+                    estados.get(intervenientes).redirecionaPacote(pedido);System.out.println("pisga");
                 }
             }
-        }
-
-        //Quando o método close do TransfereCC for chamado
-
-        //Mandar FINs para os existentes nos estados
-
-        for (Map.Entry<String, Estado> entry : estados.entrySet()){
-            Estado e = entry.getValue();
-            e.terminaConexao();
-            int i = 0;
-            Pacote p = new Pacote(false,false,true,false,false,new byte[0],this.bufferSize,0,0,e.getPortaDestino(),null,e.getDestino());
-            while(i<5){
-                agente.send(p);
-                Pacote recebido = agente.receive(200);              //Se estiver mais de 1 segundo sem resposta, desiste e considera fechada
-                if(recebido == null){
-                    i++;
-                }else if(recebido.getIntervenientes().equals(entry.getKey()) && recebido.getFin() && recebido.getAck()){
-                    p = new Pacote(true,false,true,false,false,new byte[0],this.bufferSize,0,0,e.getPortaDestino(),null,e.getDestino());
-                    agente.send(p);
-                    while(true){
-                        recebido = agente.receive(500);
-                        if(recebido == null) break;
-                        if(recebido.getIntervenientes().equals(entry.getKey()) && recebido.getFin() && recebido.getAck()){
-                            agente.send(p);                                         //Caso volte a receber finack, volta a enviar este
-                        }
-                    }
-                    break;
-                }
-            }
-
         }
 
     }
@@ -100,8 +70,8 @@ class FinalizaConexao extends Thread{
         int i = 0;
         while(i<5){
             agente.send(resposta);
-            Pacote p = estado.receive(200);
-            if(p!=null && p.getFin() && p.getAck()){
+            Pacote p = estado.receive(200);System.out.println("XO:"+p);
+            if(p!=null && p.finAck()){
                 break;                                      //Conexao Terminada
             }
             if(p==null){

@@ -23,7 +23,6 @@ class Buffer{
 		this.bufferLivre = lock.newCondition();
 		this.bufferEscrito = lock.newCondition();
 		this.fim = false;
-
 	}
 
 	public void close(){
@@ -36,6 +35,13 @@ class Buffer{
 	public int getAvailableSpace(){
 		lock.lock();
 		int ret = buffer.length - bRemaining;
+		lock.unlock();
+		return ret;
+	}
+
+	public int getBufferSize(){
+		lock.lock();
+		int ret = buffer.length;
 		lock.unlock();
 		return ret;
 	}

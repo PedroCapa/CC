@@ -49,7 +49,9 @@ class Estado{
 		this.ackReceivedC = lock.newCondition();
 		this.recebePacote = lock.newCondition();
 		this.pacotes = new ArrayList<>();
+		this.buffer = new Buffer(4000); 
 		this.fin = false;
+		this.seq = 0;
    }
 
 	/**Construtor utilizado pelos clientes*/   
@@ -71,6 +73,7 @@ class Estado{
 		this.pacotes = new ArrayList<>();
 		this.buffer = new Buffer(bs); 
 		this.fin = false;
+		this.seq = 0;
    }
 
    	public Pacote receive(){
@@ -252,6 +255,19 @@ class Estado{
 		lock.lock();
 		terminaTransferencia();
 		this.fin = true;
+		lock.unlock();
+	}
+
+	public void reset(){
+		lock.lock();
+
+		this.seq = 0;
+		this.lastAck = 0;
+		this.finalAck = -1;
+		this.listPac = new ArrayList<>();
+		this.transferir = true;				
+		this.pacotes = new ArrayList<>();
+		this.buffer = new Buffer(this.buffer.getBufferSize()); 
 		lock.unlock();
 	}
 

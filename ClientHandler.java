@@ -45,11 +45,26 @@ class ClientHandler extends Thread{
 					}
 					
 
-				}if(pedido.pshFin()){
-					agente.send(new Pacote(true,false,false,false,false,new byte[0],estado.bufferAvailableSpace(),estado.getSeq(),0,estado.getPortaDestino(),null,estado.getDestino()));
+				}if(pedido.getFin() && !pedido.getPsh()){
+					//Envia finAck para informar que recebeu o aviso e que também terminou deste lado
+			        estado.terminaConexao();
+					Pacote resposta = new Pacote(true,false,true,false,false,new byte[0],estado.bufferAvailableSpace(),estado.getSeq(),0,estado.getPortaDestino(),null,estado.getDestino());
+			        int i = 0;
+			        while(i<5){
+			            agente.send(resposta);
+			            Pacote p = estado.receive(200);System.out.println("XO:"+p);
+			            if(p!=null && p.finAck()){
+			                break;                                      //Conexao Terminada
+			            }
+			            if(p==null){
+			                i++;                        //Se nao receber pacotes durante 1 segundo, assume a conexao como terminada
+			            }
+			        }
+			        break;
 				}
 			}
 
+						System.out.println("MORRI");
 
         }catch(Exception exc){exc.printStackTrace();}
 	}
@@ -72,7 +87,7 @@ class ClientHandler extends Thread{
 	void get(BufferedInputStream fis) throws IOException, InterruptedException{
 
 	        int bytesLidos;
-	        this.estado.setSeq(0);
+	        this.estado.reset();
 	        byte[] fileContent = new byte[1000];
 	        //criar thread para gerir acks9  ST
 	        RecebeACK rack = new RecebeACK(estado);

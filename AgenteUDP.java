@@ -12,6 +12,10 @@ class AgenteUDP{
 
     private DatagramSocket udpSocket;
 
+    public void close(){
+        this.udpSocket.close();
+    }
+
     public AgenteUDP(int porta){
         try{
             this.udpSocket = new DatagramSocket(porta,null);
@@ -46,7 +50,7 @@ class AgenteUDP{
             ret.setIntervenientes(udpPacket.getPort(),udpSocket.getLocalPort(),udpPacket.getAddress(),udpSocket.getLocalAddress());
             return ret;
         }
-        catch(IOException ex){ex.printStackTrace();}
+        catch(IOException ex){}
         return null;
     }
 
