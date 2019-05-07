@@ -48,7 +48,7 @@ class TransfereCC{
 			//Envia o 1º syn que publica tamanho do buffer
 			agente.send(new Pacote(false,true,false,false,false,new byte[0],bufferSize,0,0,7777,null,IPAddress));
 			//Espera por uma confirmação durante algum tempo (em milissegundos) até reenviar
-			Pacote p = agente.receive(100);
+			Pacote p = agente.receive(300);
 			if(p != null && p.check() && p.synAck()){
 			    estado = new Estado(p.getIpOrigem(),p.getPortaOrigem(),bufferSize,p.getWindow());
 				this.estados.put(p.getIntervenientes(),estado);
@@ -213,30 +213,34 @@ class RecebeDados extends Thread{
 	public void run(){
 
 		estado.setSeq(0);
+
 		Pacote ack = new Pacote(true,false,false,false,false,new byte[0],estado.bufferAvailableSpace(),estado.getSeq(),0,estado.getPortaDestino(),null,estado.getDestino());
+
 		//Começa a receber o ficheiro
-		TreeSet<Pacote> pacBuffer = new TreeSet<>((Pacote p1, Pacote p2) -> p1.getOffset()-p2.getOffset());
+
+
 		boolean terminado = false;
 		while(!terminado){
-			//Pacote recebido = estado.getPacote();
+
 			Pacote recebido = estado.receive();
 			Pacote escrito = null;
 			if(recebido.getPsh()){ //Verifica se esta dentro da janela
-				
+
 				while(recebido != null && estado.getSeq() == recebido.getOffset()){
 					estado.writeBuffer(recebido.getDados());										//Extração e entrega à aplicação
 					escrito = recebido;
 					estado.addSeq(recebido.tamanhoDados());
-					recebido = pacBuffer.pollFirst();
+					recebido = estado.bufferPacRecebidoPollFirst();
 				}if(recebido != null && estado.getSeq() < recebido.getOffset()){				//Caso haja receções fora de ordem
-					pacBuffer.add(recebido);
+					estado.addBufferPacRecebido(recebido);
 				}
 				ack = new Pacote(true,false,false,false,false,new byte[0],estado.bufferAvailableSpace(),estado.getSeq(),0,estado.getPortaDestino(),null,estado.getDestino());
+			
+				if(escrito!=null && escrito.pshFin()){
+					terminado = true;
+				}
+				agente.send(ack);
 			}
-			if(escrito!=null && escrito.pshFin()){
-				terminado = true;
-			}
-			agente.send(ack);
 		}
 
 

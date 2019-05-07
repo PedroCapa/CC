@@ -47,7 +47,7 @@ class ComandeLineTransfereCCApp{
 		FileOutputStream fos = new FileOutputStream(filenameLocal);
 		BufferedOutputStream bos = new BufferedOutputStream(fos);
 		TransfereCC tcc = new TransfereCC();
-		tcc.connect(InetAddress.getByName(ip),4000);
+		tcc.connect(InetAddress.getByName(ip),32000);
 		tcc.get(filename);
 		byte[] lido;
 		//int bytesLidos;
@@ -64,7 +64,7 @@ class ComandeLineTransfereCCApp{
 		FileInputStream fis = new FileInputStream(filename);
 		BufferedInputStream bis = new BufferedInputStream(fis);
 		TransfereCC tcc = new TransfereCC();
-		tcc.connect(InetAddress.getByName(ip),4000);
+		tcc.connect(InetAddress.getByName(ip),32000);
 		tcc.put(filenameServer);
 		byte[] lant = new byte[1000], lido = new byte[1000];
 		int blant = bis.read(lant);

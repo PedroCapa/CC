@@ -5,6 +5,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.TimeUnit;
+import java.util.TreeSet;
 
 /*O agenteUDP so envia e recebe pacotes, o transporteUDP faz o resto
    TRansfereCC processa o pedido de conexao
@@ -31,6 +32,7 @@ class Estado{
 	private int seq;						//qt de bytes já lidos e escritos
 	private Buffer buffer;					//Buffer de dados a escrever
 	private boolean fin;					//Indica se este host já enviou o seu Fin e portanto não pode enviar dados
+	private TreeSet<Pacote> pacBufferRec;
 
 	/**Construutor usado pelo servidor*/
 	public Estado(){
@@ -42,16 +44,17 @@ class Estado{
 		this.flowWindow = 0;
 		this.lastAck = 0;
 		this.finalAck = -1;
-		this.timeout = 100;
+		this.timeout = 300;
 		this.listPac = new ArrayList<>();
 		this.transferir = true;				
 		this.enviado = lock.newCondition();
 		this.ackReceivedC = lock.newCondition();
 		this.recebePacote = lock.newCondition();
 		this.pacotes = new ArrayList<>();
-		this.buffer = new Buffer(4000); 
+		this.buffer = new Buffer(32000); 
 		this.fin = false;
 		this.seq = 0;
+		this.pacBufferRec = new TreeSet<>((Pacote p1, Pacote p2) -> p1.getOffset()-p2.getOffset());
    }
 
 	/**Construtor utilizado pelos clientes*/   
@@ -74,6 +77,7 @@ class Estado{
 		this.buffer = new Buffer(bs); 
 		this.fin = false;
 		this.seq = 0;
+		this.pacBufferRec = new TreeSet<>((Pacote p1, Pacote p2) -> p1.getOffset()-p2.getOffset());
    }
 
    	public Pacote receive(){
@@ -276,5 +280,13 @@ class Estado{
 		boolean ret = this.fin;
 		lock.unlock();
 		return ret;
+	}
+
+	public void addBufferPacRecebido(Pacote recebido){
+		this.pacBufferRec.add(recebido);
+	}
+
+	public Pacote bufferPacRecebidoPollFirst(){
+		return this.pacBufferRec.pollFirst();
 	}
 }

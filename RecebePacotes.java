@@ -38,6 +38,7 @@ class RecebePacotes extends Thread{
                     //cria thread
                     ClientHandler ch = new ClientHandler(e,agente);
                     ch.start();
+
                 }
                 else{
                     estados.get(intervenientes).redirecionaPacote(pedido);
