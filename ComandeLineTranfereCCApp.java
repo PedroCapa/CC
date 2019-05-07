@@ -9,18 +9,18 @@ import java.io.BufferedInputStream;
 
 class ComandeLineTransfereCCApp{
 
-	public static void main(String args[]) throws FicheiroNaoExisteException{
+	public static void main(String args[]){
 		try{
   			
   			if(args.length > 0){
   				File filename = new File(args[2]);
 				if(args[1].equals("put") && filename.exists()){
 					System.out.println("Entrei no upload");
-					writeFile(args[0],args[2]);
+					writeFile(args[0],args[2],args[3]);
 				}
 				else if(args[1].equals("get")){
 					System.out.println("Entrei no download");
-					readFile(args[0],args[2]);
+					readFile(args[0],args[2],args[3]);
 				}
 			}
 			else if(args.length == 0){
@@ -32,7 +32,7 @@ class ComandeLineTransfereCCApp{
   				throw new FicheiroNaoExisteException("O ficheiro não existe");
 			}
 		}
-		catch(FicheiroNaoExisteException e){
+		catch(FileNotFoundException e){
 			System.out.println(e.getMessage());
 		}
 		catch(ConexaoNaoEstabelecidaException e){
@@ -43,8 +43,8 @@ class ComandeLineTransfereCCApp{
 		}
 	}
 
-	public static void readFile(String ip, String filename) throws FileNotFoundException,UnknownHostException,IOException,ConexaoNaoEstabelecidaException{
-		FileOutputStream fos = new FileOutputStream("Teste/Recebi.txt");
+	public static void readFile(String ip, String filename, String filenameLocal) throws UnknownHostException,IOException,ConexaoNaoEstabelecidaException{
+		FileOutputStream fos = new FileOutputStream(filenameLocal);
 		BufferedOutputStream bos = new BufferedOutputStream(fos);
 		TransfereCC tcc = new TransfereCC();
 		tcc.connect(InetAddress.getByName(ip),4000);
@@ -60,12 +60,12 @@ class ComandeLineTransfereCCApp{
 		tcc.close();
 	}
 
-	public static void writeFile(String ip, String filename) throws FileNotFoundException,UnknownHostException,IOException,ConexaoNaoEstabelecidaException{
+	public static void writeFile(String ip, String filename, String filenameServer) throws FileNotFoundException,UnknownHostException,IOException,ConexaoNaoEstabelecidaException{
 		FileInputStream fis = new FileInputStream(filename);
 		BufferedInputStream bis = new BufferedInputStream(fis);
 		TransfereCC tcc = new TransfereCC();
 		tcc.connect(InetAddress.getByName(ip),4000);
-		tcc.put(filename);
+		tcc.put(filenameServer);
 		byte[] lant = new byte[1000], lido = new byte[1000];
 		int blant = bis.read(lant);
 		int bytesLidos = bis.read(lido);

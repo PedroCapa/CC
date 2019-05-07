@@ -30,9 +30,9 @@ class ClientHandler extends Thread{
 						BufferedInputStream bis = new BufferedInputStream(fis);
 						get(bis);
 					}else if(filename[0].equals("PUT")){
-						FileOutputStream fos = new FileOutputStream("Teste/Recebi.txt");
+						FileOutputStream fos = new FileOutputStream(filename[1]);
 						BufferedOutputStream bos = new BufferedOutputStream(fos);
-						GetClient gc = new GetClient(estado,agente);
+						RecebeDados gc = new RecebeDados(estado,agente);
 						gc.start();
 
 						byte[] lido;
@@ -52,7 +52,7 @@ class ClientHandler extends Thread{
 			        int i = 0;
 			        while(i<5){
 			            agente.send(resposta);
-			            Pacote p = estado.receive(200);System.out.println("XO:"+p);
+			            Pacote p = estado.receive(200);
 			            if(p!=null && p.finAck()){
 			                break;                                      //Conexao Terminada
 			            }
@@ -64,7 +64,6 @@ class ClientHandler extends Thread{
 				}
 			}
 
-						System.out.println("MORRI");
 
         }catch(Exception exc){exc.printStackTrace();}
 	}

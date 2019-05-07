@@ -128,7 +128,7 @@ class TransfereCC{
 				confirmado = true;
 			}
 		}
-		GetClient gc = new GetClient(estado,agente);
+		RecebeDados gc = new RecebeDados(estado,agente);
 		gc.start();
 	}
 
@@ -179,7 +179,7 @@ class TransfereCC{
 	}
 
 	public void close(){
-		this.rp.close();System.out.println("AHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH");
+		this.rp.close();
 		this.agente.close();
 		try{
 			this.rp.join();
@@ -200,12 +200,12 @@ class TransfereCC{
 
 }
 
-class GetClient extends Thread{
+class RecebeDados extends Thread{
 	private Estado estado;
 	private AgenteUDP agente;
 
 
-	GetClient(Estado e, AgenteUDP a){
+	RecebeDados(Estado e, AgenteUDP a){
 		this.estado = e;
 		this.agente = a;
 	}
@@ -228,10 +228,8 @@ class GetClient extends Thread{
 					escrito = recebido;
 					estado.addSeq(recebido.tamanhoDados());
 					recebido = pacBuffer.pollFirst();
-					System.out.println("prox: "+recebido);
 				}if(recebido != null && estado.getSeq() < recebido.getOffset()){				//Caso haja receções fora de ordem
 					pacBuffer.add(recebido);
-					System.out.println("Pacote adicionado: "+recebido);
 				}
 				ack = new Pacote(true,false,false,false,false,new byte[0],estado.bufferAvailableSpace(),estado.getSeq(),0,estado.getPortaDestino(),null,estado.getDestino());
 			}

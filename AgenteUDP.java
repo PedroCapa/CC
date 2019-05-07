@@ -44,7 +44,7 @@ class AgenteUDP{
             byte[] buf = new byte[4*1024];
             DatagramPacket udpPacket = new DatagramPacket(buf,buf.length);
             udpSocket.receive(udpPacket);
-            Pacote ret = new Pacote();System.out.println(udpPacket.getLength());
+            Pacote ret = new Pacote();
             ret.bytes2pacote(Arrays.copyOf(udpPacket.getData(),udpPacket.getLength()));
             System.out.println("Recebeu: "+ret);
             ret.setIntervenientes(udpPacket.getPort(),udpSocket.getLocalPort(),udpPacket.getAddress(),udpSocket.getLocalAddress());
