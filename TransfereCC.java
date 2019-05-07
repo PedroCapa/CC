@@ -49,7 +49,7 @@ class TransfereCC{
 			agente.send(new Pacote(false,true,false,false,false,new byte[0],bufferSize,0,0,7777,null,IPAddress));
 			//Espera por uma confirmação durante algum tempo (em milissegundos) até reenviar
 			Pacote p = agente.receive(100);
-			if(p != null && true/*Integridade*/&& p.synAck()){
+			if(p != null && p.check() && p.synAck()){
 			    estado = new Estado(p.getIpOrigem(),p.getPortaOrigem(),bufferSize,p.getWindow());
 				this.estados.put(p.getIntervenientes(),estado);
 
@@ -124,7 +124,7 @@ class TransfereCC{
 		while(!confirmado){
 			agente.send(pedido);
 			Pacote p = estado.receive(500);
-			if(p!=null && /*I*/true && p.getAck() && p.getReq()){
+			if(p!=null && p.check() && p.getAck() && p.getReq()){
 				confirmado = true;
 			}
 		}
@@ -143,7 +143,7 @@ class TransfereCC{
 		while(!confirmado){
 			agente.send(pedido);
 			Pacote p = estado.receive(500);
-			if(p!=null && /*I*/true && p.getAck() && p.getReq()){
+			if(p!=null && p.check() && p.getAck() && p.getReq()){
 				confirmado = true;
 			}
 		}

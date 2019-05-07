@@ -28,9 +28,9 @@ class RecebePacotes extends Thread{
         Pacote pedido = null;
         while(true){
             pedido = agente.receive();
-            if(!trabalhar.get()) {System.out.println("desisto");break;}
+            if(!trabalhar.get()) {break;}
             String intervenientes = pedido.getIntervenientes();
-            if(/*Integridade*/true){
+            if(pedido.check()){
                 if(pedido.getSyn() && (!estados.containsKey(intervenientes) || estados.get(intervenientes).isFin())){
                     Estado e = new Estado(pedido.getIpOrigem(),pedido.getPortaOrigem(),this.bufferSize,pedido.getWindow());
                     estados.put(intervenientes,e);

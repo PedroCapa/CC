@@ -106,9 +106,10 @@ class ClientHandler extends Thread{
 	        	if(bytesLidos == -1) {
 			        estado.setFinalAck(estado.getSeq());
 			        pacote.setFin(true);
+			        pacote.setChecksum();
 	        	}
 			estado.enviou(pacote);
-	        	agente.send(pacote);
+	        agente.send(pacote);
 	        }
 
 

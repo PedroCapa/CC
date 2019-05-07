@@ -18,6 +18,8 @@ class Pacote{
 	private int portaDestino;
 	private InetAddress ipOrigem;
 	private InetAddress ipDestino;
+	long checksum;
+	static int header_size = 17;
 
 	Pacote(boolean ack, boolean syn, boolean fin, boolean psh, boolean req, byte[] dados, int window, int offset, int portaOrigem, int portaDestino, InetAddress ipOrigem, InetAddress ipDestino){
 		this.ack = ack;
@@ -32,19 +34,9 @@ class Pacote{
 		this.portaDestino = portaDestino;
 		this.ipOrigem = ipOrigem;
 		this.ipDestino = ipDestino;
+		this.setChecksum();
 	}
-/*
-	Pacote(boolean ack, boolean syn, boolean fin, boolean psh, boolean req, byte[] dados, int window, int offset){
-		this.ack = ack;
-		this.syn = syn;
-		this.fin = fin;
-		this.psh = psh;
-		this.req = req;
-		this.dados = dados;
-		this.window = window;
-		this.offset = offset;
-	}
-*/
+
 	Pacote(){
 	}
 
@@ -87,6 +79,10 @@ class Pacote{
 		return this.fin;
 	}
 
+	public long getChecksum(){
+		return this.checksum;
+	}
+
 	public void setFin(boolean f){
 		this.fin = f;
 	}
@@ -124,8 +120,9 @@ class Pacote{
 		return str;
 	}
 
-	byte[] pacote2bytes(){
-		byte[] pac = new byte[dados.length + 9];
+	byte[] header2byte(){
+
+		byte[] pac = new byte[9];
 
 		int flags = this.ack?1:0;
 		flags += this.syn?2:0;
@@ -141,13 +138,41 @@ class Pacote{
 		byte [] win;
 		win = ByteBuffer.allocate(4).putInt(window).array();
 		System.arraycopy(win, 0, pac, 5, 4);
-		System.arraycopy(dados, 0, pac, 9, dados.length);
+
+		return pac;
+
+	}
+
+
+	byte[] pacote2bytes(){
+		byte[] pac = new byte[dados.length + Pacote.header_size];
+
+		int flags = this.ack?1:0;
+		flags += this.syn?2:0;
+		flags += this.fin?4:0;
+		flags += this.psh?8:0;
+		flags += this.req?16:0;
+
+		pac[0] = (byte)flags;
+		byte [] off;
+		off = ByteBuffer.allocate(4).putInt(offset).array();
+		System.arraycopy(off, 0, pac, 1, 4);
+
+		byte [] win;
+		win = ByteBuffer.allocate(4).putInt(window).array();
+		System.arraycopy(win, 0, pac, 5, 4);
+
+		byte [] check = new byte [8];
+		check = ByteBuffer.allocate(Long.BYTES).putLong(this.checksum).array();
+		System.arraycopy(check, 0, pac, 9, 8);
+
+		System.arraycopy(dados, 0, pac, Pacote.header_size, dados.length);
 
 		return pac;
 	}
 
 	void bytes2pacote(byte[] copia){
-		dados = new byte[copia.length - 9];
+		dados = new byte[copia.length - Pacote.header_size];
 
 		int flags = (int)copia[0];
 		ack = (flags % 2) == 1;
@@ -166,8 +191,60 @@ class Pacote{
 
 		System.arraycopy(copia, 5, off, 0, 4);
 		window = ByteBuffer.wrap(off).getInt();
-		System.arraycopy(copia, 9, dados, 0, dados.length);
+
+
+		byte [] check = new byte [8];
+		System.arraycopy(copia, 9, check, 0, 8);
+		ByteBuffer bb = ByteBuffer.allocate(Long.BYTES);
+		bb.put(check);
+		bb.flip();
+		this.checksum = bb.getLong();
+
+		System.arraycopy(copia, Pacote.header_size, dados, 0, dados.length);
 	}
+
+
+	public boolean check(){
+		byte [] c_dados = new byte[this.dados.length];
+		byte complement;
+		long soma = 0;
+		for(int i = 0; i < this.dados.length; i++){
+			complement = (byte) ((Math.floor(Math.log(this.dados[i]) / Math.log(2))) + 1);
+			c_dados[i] = (byte) (((1 << complement) - 1) ^ this.dados[i]);
+			soma += (long) c_dados[i];
+		}
+
+		byte [] c_header = new byte[9];
+		byte [] header = header2byte();
+		for(int i = 0; i < header.length; i++){
+			complement = (byte) ((Math.floor(Math.log(header[i]) / Math.log(2))) + 1);
+			c_header[i] = (byte) (((1 << complement) - 1) ^ header[i]);
+			soma += (long) c_header[i];
+		}
+
+		complement = (byte) ((Math.floor(Math.log(soma) / Math.log(2))) + 1);
+		return (soma == this.checksum);
+	}
+
+	public void setChecksum(){
+		byte [] c_dados = new byte[this.dados.length];
+		byte complement;
+		this.checksum = 0;
+		for(int i = 0; i < this.dados.length; i++){
+			complement = (byte) ((Math.floor(Math.log(dados[i]) / Math.log(2))) + 1);
+			c_dados[i] = (byte) (((1 << complement) - 1) ^ this.dados[i]);
+			this.checksum += c_dados[i];
+		}
+
+		byte [] c_header = new byte[9];
+		byte [] header = header2byte();
+		for(int i = 0; i < header.length; i++){
+			complement = (byte) ((Math.floor(Math.log(header[i]) / Math.log(2))) + 1);
+			c_header[i] = (byte) (((1 << complement) - 1) ^ header[i]);
+			this.checksum += c_header[i];
+		}
+	}
+
 
 
 	public boolean synAck(){
