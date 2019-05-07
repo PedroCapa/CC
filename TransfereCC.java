@@ -105,8 +105,8 @@ class TransfereCC{
     	Pacote pacote = new Pacote(false,false,false,true,false,Arrays.copyOf(fileContent,bytesLidos),estado.bufferAvailableSpace(),estado.getSeq(),0,estado.getPortaDestino(),null,estado.getDestino());
     	estado.addSeq(bytesLidos);
 
-    	agente.send(pacote);
-        estado.enviou(pacote);
+    	estado.enviou(pacote);
+	agente.send(pacote);
     
 
 	}
@@ -220,7 +220,7 @@ class GetClient extends Thread{
 		while(!terminado){
 			//Pacote recebido = estado.getPacote();
 			Pacote recebido = estado.receive();
-			Pacote escrito = recebido;
+			Pacote escrito = null;
 			if(recebido.getPsh()){ //Verifica se esta dentro da janela
 				
 				while(recebido != null && estado.getSeq() == recebido.getOffset()){
@@ -235,7 +235,7 @@ class GetClient extends Thread{
 				}
 				ack = new Pacote(true,false,false,false,false,new byte[0],estado.bufferAvailableSpace(),estado.getSeq(),0,estado.getPortaDestino(),null,estado.getDestino());
 			}
-			if(escrito.pshFin()){
+			if(escrito!=null && escrito.pshFin()){
 				terminado = true;
 			}
 			agente.send(ack);

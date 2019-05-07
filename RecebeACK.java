@@ -19,6 +19,8 @@ class RecebeACK extends Thread{
 			Pacote pacote = estado.receive();
 			if(pacote.getAck()){
 				estado.setLastAck(pacote);
+			}if(pacote.getFin() || pacote.getReq()){
+				estado.terminaTransferencia();			//Significa que já não está interessado na transferẽncia atual, útil caso o ultimo ack tenha sido perdido
 			}
 		}
 	}

@@ -107,8 +107,8 @@ class ClientHandler extends Thread{
 			        estado.setFinalAck(estado.getSeq());
 			        pacote.setFin(true);
 	        	}
+			estado.enviou(pacote);
 	        	agente.send(pacote);
-	            estado.enviou(pacote);
 	        }
 
 
