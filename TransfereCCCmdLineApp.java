@@ -7,7 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.BufferedOutputStream;
 import java.io.BufferedInputStream;
 
-class ComandeLineTransfereCCApp{
+class  TransfereCCCmdLineApp{
 
 	public static void main(String args[]){
 		try{
