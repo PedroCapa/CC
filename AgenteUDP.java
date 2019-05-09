@@ -12,10 +12,6 @@ class AgenteUDP{
 
     private DatagramSocket udpSocket;
 
-    public void close(){
-        this.udpSocket.close();
-    }
-
     public AgenteUDP(int porta){
         try{
             this.udpSocket = new DatagramSocket(porta,null);
@@ -29,6 +25,19 @@ class AgenteUDP{
     }
 
 
+	/**
+	*Método que fecha o socket
+	*
+	*/
+    public void close(){
+        this.udpSocket.close();
+    }
+
+	/**
+	*Método que envia um pacote para o destino indicado neste
+	*
+	*@param p Pacote a enviar
+	*/
     public void send(Pacote p){
         try{System.out.println("Enviou: " + p.toString() + p.getIpDestino() +" , "+ p.getPortaDestino());
             byte[] sendData = p.pacote2bytes();
@@ -39,6 +48,11 @@ class AgenteUDP{
 
 
 
+	/**
+	*Método que espera que um pacote seja recebido
+	*
+	*@return Pacote recebido
+	*/
     public Pacote receive(){
         try{
             byte[] buf = new byte[4*1024];
@@ -54,6 +68,12 @@ class AgenteUDP{
         return null;
     }
 
+	/**
+	*Método que espera que um pacote seja recebido durante um dado tempo
+	*
+	*@param ms Milissegundos até que desista da receção de um pacote
+	*@return Pacote recebido
+	*/
     public Pacote receive(int ms){
         try{
             byte[] buf = new byte[4*1024];

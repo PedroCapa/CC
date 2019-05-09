@@ -1,3 +1,7 @@
+/**
+ * Classe que cria conexões e estados que as representam e envia pacotes para as conexões respetivas
+ *
+ */
 import java.net.*;
 import java.io.*;
 import java.util.*;

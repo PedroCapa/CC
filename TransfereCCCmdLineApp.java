@@ -43,6 +43,13 @@ class  TransfereCCCmdLineApp{
 		}
 	}
 
+	/**
+	*Metodo que irá criar um ficheiro localmente a partir de um ficheiro remoto
+	*
+	*@param ip IP do servidor onde se encontra o ficheiro
+	*@param filename Nome do ficheiro a descarregar do servidor
+	*@param filenameLocal Nome do ficheiro a ser criado localmente
+	*/
 	public static void readFile(String ip, String filename, String filenameLocal) throws UnknownHostException,IOException,ConexaoNaoEstabelecidaException{
 		FileOutputStream fos = new FileOutputStream(filenameLocal);
 		BufferedOutputStream bos = new BufferedOutputStream(fos);
@@ -60,6 +67,13 @@ class  TransfereCCCmdLineApp{
 		tcc.close();
 	}
 
+	/**
+	*Metodo que irá criar um ficheiro no servidor a partir de um ficheiro local
+	*
+	*@param ip IP do servidor para onde o ficheiro deverá ser entregue
+	*@param filename Nome do ficheiro a ser entregue
+	*@param filenameServer Nome do ficheiro a ser criado no servidor
+	*/
 	public static void writeFile(String ip, String filename, String filenameServer) throws FileNotFoundException,UnknownHostException,IOException,ConexaoNaoEstabelecidaException{
 		FileInputStream fis = new FileInputStream(filename);
 		BufferedInputStream bis = new BufferedInputStream(fis);

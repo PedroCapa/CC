@@ -40,6 +40,14 @@ class Pacote{
 	Pacote(){
 	}
 
+	/**
+	*Método que define a origem e destino deste pacote
+	*
+	*@param portaOrigem Porta pela qual a máquina origem está a comunicar
+	*@param portaDestino Porta pela qual a máquina destino está a comunicar
+	*@param ipOrigem IP da máquina origem
+	*@param ipDestino IP da máquina destino
+	*/
 	public void setIntervenientes(int portaOrigem, int portaDestino, InetAddress ipOrigem, InetAddress ipDestino){
 		this.portaOrigem = portaOrigem;
 		this.portaDestino = portaDestino;
@@ -120,6 +128,11 @@ class Pacote{
 		return str;
 	}
 
+	/**
+	*Método que devolve o cabeçalho num array de bytes
+	*
+	*@return Array de bytes onde é inserida a informação do cabeçalho
+	*/
 	byte[] header2byte(){
 
 		byte[] pac = new byte[9];
@@ -144,6 +157,11 @@ class Pacote{
 	}
 
 
+	/**
+	*Método que devolve o pacote num array de bytes para que possa ser enviado
+	*
+	*@return array de bytes onde é inserida a informação do pacote
+	*/
 	byte[] pacote2bytes(){
 		byte[] pac = new byte[dados.length + Pacote.header_size];
 
@@ -171,6 +189,11 @@ class Pacote{
 		return pac;
 	}
 
+	/**
+	*Método que transforma este pacote baseado no array de bytes fornecido
+	*
+	*@param copia Array de bytes do qual se irá extrair a informação
+	*/
 	void bytes2pacote(byte[] copia){
 		dados = new byte[copia.length - Pacote.header_size];
 
@@ -204,6 +227,11 @@ class Pacote{
 	}
 
 
+	/**
+	*Método que verifica a integridade de um pacote
+	*
+	*@return True se o pacote está correto, false caso contrário
+	*/
 	public boolean check(){
 		byte [] c_dados = new byte[this.dados.length];
 		byte complement;
@@ -226,6 +254,10 @@ class Pacote{
 		return (soma == this.checksum);
 	}
 
+	/**
+	*Método que define o checksum do pacote
+	*
+	*/
 	public void setChecksum(){
 		byte [] c_dados = new byte[this.dados.length];
 		byte complement;

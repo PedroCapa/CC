@@ -41,6 +41,12 @@ class TransfereCC{
 		this.agente = new AgenteUDP();
 	}
 
+	/**
+	*Metodo que irá estabelecer uma conexão com um servidor
+	*
+	*@param IPAddress IP do servidor com o qual se deve estabelecer uma conexão
+	*@param bufferSize Tamanho do buffer a atribuir para esta conexão
+	*/
 	public void connect(InetAddress IPAddress, int bufferSize) throws ConexaoNaoEstabelecidaException{
 		Estado estado = null;
 		int i;
@@ -64,6 +70,13 @@ class TransfereCC{
 		rp.start();
 	}
 
+
+	/**
+	*Metodo que irá devolver um array de bytes de um ficheiro pedido para ler
+	*
+	*@param size Número de 
+	*@return Array de bytes lidos
+	*/
 	public byte[] read(int size){
 		byte[] arr = null;
 		boolean leu = false;
@@ -79,7 +92,13 @@ class TransfereCC{
 		return arr;
 	}
 
-	/**Envia e indica que o ficheiro a transferir terminou*/
+	
+	/**
+	*Envia bytes e indica que o ficheiro a transferir terminou
+	*
+	*@param fileContent array de bytes a enviar
+	*@param bytesLidos quantidade de bytes a enviar do fileContent
+	*/
 	public void writeFin(byte[] fileContent, int bytesLidos){
 		estado.esperaWindow(bytesLidos);			//Espera caso nao tenha espaço na janela
 
@@ -97,6 +116,13 @@ class TransfereCC{
         }catch(InterruptedException exc){}
 	}
 
+	
+	/**
+	*Envia bytesLidos
+	*
+	*@param fileContent array de bytes a enviar
+	*@param bytesLidos quantidade de bytes a enviar do fileContent
+	*/
 	public void write(byte[] fileContent, int bytesLidos){
 
 
@@ -112,7 +138,12 @@ class TransfereCC{
 	}
 
 
-
+	
+	/**
+	*Envia um pedido de download de um ficheiro ao servidor
+	*
+	*@param filename Nome do ficheiro remoto a transferir
+	*/
 	public void get(String filename)throws UnknownHostException{
 		
 		//Criação e envio do pedido
@@ -132,6 +163,11 @@ class TransfereCC{
 		gc.start();
 	}
 
+	/**
+	*Envia um pedido de download de um ficheiro ao servidor
+	*
+	*@param filename Nome do ficheiro remoto a transferir
+	*/
 	public void put(String filename)throws UnknownHostException{
 		
 		//Criação e envio do pedido
@@ -157,6 +193,10 @@ class TransfereCC{
         temp.start();
 	}
 
+	/**
+	*Metodo que irá terminar a conexão existente com um servidor
+	*
+	*/
 	public void disconnect(){
 		estado.terminaConexao();
         int i = 0;
@@ -178,6 +218,7 @@ class TransfereCC{
         }
 	}
 
+
 	public void close(){
 		this.rp.close();
 		this.agente.close();
@@ -188,6 +229,10 @@ class TransfereCC{
 	}
 
 
+	/**
+	*Metodo que inicia um servidor
+	*
+	*/
 	public void iniciaServidor(){
 		
 		RecebePacotes rp = new RecebePacotes(estados,agente,4000);

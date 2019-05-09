@@ -1,3 +1,8 @@
+/**
+ * Classe que trata de verificar se um pacote deve ser reenviado por timeout e o reenvia nesse caso 
+ *
+ */
+
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;

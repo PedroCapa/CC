@@ -1,3 +1,7 @@
+/**
+ * Classe que trata de verificar os ACK recebidos e gerir assim os pacotes a enviar 
+ *
+ */
 import java.net.*;
 import java.io.*;
 import java.util.ArrayList;

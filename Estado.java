@@ -24,15 +24,15 @@ class Estado{
 	private int lastAck;					//Maior Ack recebido
 	private int finalAck;					//Ultimo ack a ser recebido para concluir a transferencia
 	private long timeout;					//Tempo para receber um ACK até que reenvie (em ms)
-	private List<Pacote> listPac;			//Lista de pacotes ainda não ACK
+	private List<Pacote> listPac;			//Lista de pacotes enviados por esta máquina ainda não confirmados
 	private boolean transferir;				//Flag que indica se a transferencia ainda está a decorrer
 	private Condition enviado;
-	private List<Pacote> pacotes;			//Lista de pacotes a receber
+	private List<Pacote> pacotes;			//Lista de pacotes recebidos ainda não tratados, enviados pela thread RecebePacotes a ler por outras threads
 	private Condition recebePacote;
 	private int seq;						//qt de bytes já lidos e escritos
 	private Buffer buffer;					//Buffer de dados a escrever
 	private boolean fin;					//Indica se este host já enviou o seu Fin e portanto não pode enviar dados
-	private TreeSet<Pacote> pacBufferRec;
+	private TreeSet<Pacote> pacBufferRec;	//Pacotes recebidos com um número de sequência maior que o esperado
 
 	/**Construutor usado pelo servidor*/
 	public Estado(){
@@ -80,6 +80,11 @@ class Estado{
 		this.pacBufferRec = new TreeSet<>((Pacote p1, Pacote p2) -> p1.getOffset()-p2.getOffset());
    }
 
+	/**
+	*Método que recebe um pacote referente a esta conexão, desviado pelo RecebePacotes
+	*
+	*@return Pacote recebido
+	*/
    	public Pacote receive(){
    		Pacote p = null;
    		lock.lock();
@@ -95,6 +100,12 @@ class Estado{
    		return p;
    	}
 
+	/**
+	*Método que recebe um pacote referente a esta conexão durante um certo tempo, desviado pelo RecebePacotes
+	*
+	*@param ms Milissegundos que espera até que volte sem pacote
+	*@return Pacote recebido ou null caso o tempo tenha passado
+	*/
    	public Pacote receive(int ms){
    		Pacote p = null;
    		lock.lock();
@@ -112,6 +123,11 @@ class Estado{
    		return p;
    	}
    
+	/**
+	*Método que adiciona um pacote aos pacotes a receber
+	*
+	*@param p Pacote recebido
+	*/
    	public void redirecionaPacote(Pacote p){
    		lock.lock();
    		pacotes.add(p);
@@ -119,6 +135,11 @@ class Estado{
    		lock.unlock();
    	}
 
+	/**
+	*Método que indica se existe alguma transferencia a decorrer
+	*
+	*@return true caso exista, false caso contrário
+	*/
  	public boolean transferir(){
 		lock.lock();
 		boolean ret = transferir;
@@ -126,6 +147,10 @@ class Estado{
 		return ret;
 	}
 
+	/**
+	*Método que indica que define que não existem transferências a decorrer
+	*
+	*/
 	public void terminaTransferencia(){
 		lock.lock();
 		this.transferir = false;
@@ -172,6 +197,11 @@ class Estado{
 		this.flowWindow = w;
 	}
 
+	/**
+	*Método que irá bloquear até que não hajam pacotes à espera de confirmação, ou até que algum tenha sofrido timeout
+	*
+	*@return Pacote que recebeu timeout ou null caso nenhuma mensagem tenha sofrido timeout
+	*/
    	public Pacote timer(){
    		lock.lock();
    		try{
@@ -191,6 +221,11 @@ class Estado{
 		return null;
    	}
 
+	/**
+	*Método que indica que um pacote foi enviado para que este seja guardado caso haja necessidade de o reenviar
+	*
+	*@param p Pacote enviado
+	*/
    	public void enviou(Pacote p){
    		lock.lock();
    		enviado.signalAll();
@@ -198,6 +233,11 @@ class Estado{
    		lock.unlock();
    	}
 
+	/**
+	*Método que espera até que haja algum espaço no buffer do outro lado da conexão
+	*
+	*@param bytes Nº de bytes que se pretende enviar
+	*/
 	public void esperaWindow(int bytes){				//Pode sair pq ganhou espaço
 		lock.lock();
 		try{
@@ -211,6 +251,11 @@ class Estado{
 		}
 	}
 
+	/**
+	*Método que define o último pacote a ser confirmado e atualiza o tamanho da janela do outro lado da conexão
+	*
+	*@param p Pacote ACK recebido
+	*/
 	public void setLastAck(Pacote p){			//DEVE DEPOIS ELIMINAR PACOTES DO BUFFER DOS ENVIADOS
 		lock.lock();
 		int ack = p.getOffset();
@@ -233,28 +278,57 @@ class Estado{
 		return ret;
 	}
 
+	/**
+	*Método que define o último ack que deverá ser enviado
+	*
+	*@param s Valor do ACK final
+	*/
 	public void setFinalAck(int s){		
 		lock.lock();
 		this.finalAck = s;
 		lock.unlock();
 	}
 
+	/**
+	*Método que lê o buffer, bloqueando caso não seja possível ler o nº de bytes indicados
+	*
+	*@param size Nº de bytes a ler
+	*@return Array de bytes lidos
+	*/
 	public byte[] readBuffer(int size) throws DadosAindaNaoRecebidos{
 		return this.buffer.read(size);
 	}
 
+	/**
+	*Método que escreve no buffer um array de bytes, bloqueando até que este possa ser escrito
+	*
+	*@param arr Bytes a escrever
+	*/
 	public void writeBuffer(byte[] arr){
 		this.buffer.write(arr);
 	}
 
+	/**
+	*Método que devolve o espaço disponível no buffer local
+	*
+	*@return Nº de bytes disponíveis
+	*/
 	public int bufferAvailableSpace(){
 		return this.buffer.getAvailableSpace();
 	}
 
+	/**
+	*Método que fecha o buffer local
+	*
+	*/
 	public void closeBuffer(){
 		this.buffer.close();
 	}
 
+	/**
+	*Método que identifica a conexão como terminada
+	*
+	*/
 	public void terminaConexao(){
 		lock.lock();
 		terminaTransferencia();
@@ -262,6 +336,10 @@ class Estado{
 		lock.unlock();
 	}
 
+	/**
+	*Método que reinicializa variáveis caso se pretenda transferir mais do que um ficheiro por conexão
+	*
+	*/
 	public void reset(){
 		lock.lock();
 

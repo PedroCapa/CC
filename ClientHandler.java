@@ -1,3 +1,7 @@
+/**
+ * Classe que satisfaz os pedidos dos clientes
+ *
+ */
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -68,6 +72,13 @@ class ClientHandler extends Thread{
         }catch(Exception exc){exc.printStackTrace();}
 	}
 
+
+	/**
+	*Metodo que irá devolver um array de bytes de um ficheiro pedido para ler
+	*
+	*@param size Número de 
+	*@return Array de bytes lidos
+	*/
 	public byte[] read(int size){
 		byte[] arr = null;
 		boolean leu = false;
@@ -83,6 +94,11 @@ class ClientHandler extends Thread{
 		return arr;
 	}
 
+	/**
+	*Método que envia pacotes de dados de um ficheiro a um cliente
+	*
+	*@param fis ficheiro a enviar
+	*/
 	void get(BufferedInputStream fis) throws IOException, InterruptedException{
 
 	        int bytesLidos;

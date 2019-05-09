@@ -1,4 +1,7 @@
-
+/**
+ * Classe que recebe dados de pacotes para preencher um buffer e envia ACKs
+ *
+ */
 class RecebeDados extends Thread{
 	private Estado estado;
 	private AgenteUDP agente;

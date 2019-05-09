@@ -25,6 +25,10 @@ class Buffer{
 		this.fim = false;
 	}
 
+	/**
+	*Método que indica que este buffer não será mais preenchido
+	*
+	*/
 	public void close(){
 		lock.lock();
 		this.fim = true;
@@ -32,6 +36,11 @@ class Buffer{
 		lock.unlock();
 	}
 
+	/**
+	*Método que devolve o espaço disponivel neste buffer
+	*
+	*@return nº de bytes livres no buffer
+	*/
 	public int getAvailableSpace(){
 		lock.lock();
 		int ret = buffer.length - bRemaining;
@@ -39,6 +48,11 @@ class Buffer{
 		return ret;
 	}
 
+	/**
+	*Método que devolve o tamanho total do buffer
+	*
+	*@return nº máximo de bytes que o buffer pode armazenar num momento
+	*/
 	public int getBufferSize(){
 		lock.lock();
 		int ret = buffer.length;
@@ -46,6 +60,11 @@ class Buffer{
 		return ret;
 	}
 
+	/**
+	*Método que verifica se um buffer está fechado, não será mais escrito
+	*
+	*@return True se o buffer está fechado, false caso contrário
+	*/
 	public boolean isClosed(){
 		lock.lock();
 		boolean ret = fim;
@@ -53,6 +72,11 @@ class Buffer{
 		return ret;
 	}
 
+	/**
+	*Método que bloqueia até que haja espaço disponível no buffer para escrever um dado nº de bytes
+	*
+	*@param bytes nº de bytes que devem estar disponíveis até que desbloqueie
+	*/
 	public void waitForAvailableSpace(int bytes){
 		lock.lock();
 		try{
@@ -66,6 +90,12 @@ class Buffer{
 		}
 	}
 
+	/**
+	*Método que lê uma quantidade de bytes do buffer, avançando o cursor, libertando espaço no array e bloqueando até que haja bytes suficientes para ler
+	*
+	*@param size nº de bytes a ler
+	*@return array de bytes lidos
+	*/
 	public byte[] read(int size) throws DadosAindaNaoRecebidos{
 		lock.lock();
 		try{
@@ -99,6 +129,12 @@ class Buffer{
 		return arr;
 	}
 
+	/**
+	*Método que escreve um array de bytes no buffer, bloqueando caso não seja possível escrever tudo
+	*
+	*@param size nº de bytes a ler
+	*@return array de bytes lidos
+	*/
 	public void write(byte[] arr){
 		lock.lock();
 		waitForAvailableSpace(arr.length);
